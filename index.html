@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>어서와 여행은 처음이지? — 도시별 숙소 가격 지도</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&family=Pacifico&display=swap"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0e1a;
+  --card-bg:#111827;
+  --card-border:#1f2d45;
+  --accent:#f97316;
+  --accent2:#6366f1;
+  --text:#f1f5f9;
+  --muted:#94a3b8;
+  --glow:rgba(249,115,22,.18);
+}
+html,body{
+  height:100%;
+  font-family:'Noto Sans KR',-apple-system,'Malgun Gothic',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  overflow-x:hidden;
+}
+
+/* ── HERO ── */
+.hero{
+  min-height:100vh;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  text-align:center;
+  padding:40px 20px 0;
+  position:relative;
+  overflow:hidden;
+}
+/* 배경 그라디언트 + 별자리 느낌 */
+.hero::before{
+  content:'';
+  position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(99,102,241,.22) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 40% at 80% 80%, rgba(249,115,22,.12) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 30% at 10% 60%, rgba(6,182,212,.10) 0%, transparent 60%);
+  pointer-events:none;
+}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(99,102,241,.15);
+  border:1px solid rgba(99,102,241,.35);
+  border-radius:100px;
+  padding:5px 14px;
+  font-size:.72rem;font-weight:700;
+  color:#a5b4fc;
+  letter-spacing:.06em;text-transform:uppercase;
+  margin-bottom:28px;
+}
+.hero-badge span{animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+.hero-eyebrow{
+  font-size:clamp(1rem,3vw,1.3rem);
+  font-weight:700;color:var(--accent);
+  letter-spacing:.04em;margin-bottom:16px;
+}
+.hero-title{
+  font-size:clamp(2rem,6vw,3.8rem);
+  font-weight:900;line-height:1.12;
+  letter-spacing:-.02em;
+  margin-bottom:20px;
+}
+.hero-title .hl{
+  background:linear-gradient(135deg,#f97316 0%,#fb923c 40%,#fbbf24 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.hero-desc{
+  font-size:clamp(.9rem,2vw,1.05rem);
+  color:var(--muted);
+  max-width:580px;
+  line-height:1.85;
+  margin-bottom:14px;
+}
+.hero-desc strong{color:var(--text);font-weight:700}
+.hero-cta-hint{
+  font-size:.78rem;color:var(--muted);
+  display:flex;align-items:center;gap:6px;
+  margin-bottom:48px;
+}
+.hero-cta-hint::before,
+.hero-cta-hint::after{content:'';flex:1;height:1px;background:linear-gradient(to right,transparent,rgba(148,163,184,.25))}
+
+/* ── CITY GRID ── */
+.section{
+  max-width:1100px;
+  width:100%;
+  margin:0 auto;
+  padding:0 20px 80px;
+}
+.section-label{
+  font-size:.72rem;font-weight:700;
+  text-transform:uppercase;letter-spacing:.1em;
+  color:var(--muted);
+  margin-bottom:28px;
+  display:flex;align-items:center;gap:10px;
+}
+.section-label::after{content:'';flex:1;height:1px;background:var(--card-border)}
+
+.city-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(170px,1fr));
+  gap:16px;
+}
+
+/* ── CITY CARD ── */
+.city-card{
+  position:relative;
+  background:var(--card-bg);
+  border:1.5px solid var(--card-border);
+  border-radius:20px;
+  padding:28px 16px 22px;
+  text-align:center;
+  cursor:pointer;
+  transition:transform .22s cubic-bezier(.25,.8,.25,1), box-shadow .22s, border-color .22s;
+  user-select:none;
+  text-decoration:none;
+  display:block;
+  overflow:hidden;
+}
+.city-card::before{
+  content:'';
+  position:absolute;inset:0;
+  border-radius:20px;
+  background:radial-gradient(circle at 50% 0%, var(--c-glow,rgba(99,102,241,.12)) 0%, transparent 70%);
+  opacity:0;
+  transition:opacity .3s;
+}
+.city-card:hover::before{opacity:1}
+.city-card:hover{
+  transform:translateY(-6px) scale(1.02);
+  border-color:var(--c-color, var(--accent2));
+  box-shadow:0 16px 40px rgba(0,0,0,.4), 0 0 0 1px var(--c-color,var(--accent2));
+}
+.city-card.available:hover{
+  box-shadow:0 16px 40px rgba(0,0,0,.4), 0 0 24px var(--c-glow, var(--glow));
+}
+
+/* 픽토그램 */
+.city-picto{
+  width:72px;height:72px;
+  border-radius:18px;
+  background:var(--c-bg, rgba(99,102,241,.12));
+  border:1.5px solid var(--c-color, rgba(99,102,241,.3));
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 16px;
+  font-size:2.2rem;
+  transition:transform .22s,box-shadow .22s;
+}
+.city-card:hover .city-picto{
+  transform:scale(1.1) rotate(-3deg);
+  box-shadow:0 8px 24px var(--c-glow, rgba(99,102,241,.25));
+}
+
+.city-name-ko{
+  font-size:1.1rem;font-weight:900;
+  color:var(--text);
+  margin-bottom:3px;
+  letter-spacing:-.01em;
+}
+.city-name-en{
+  font-size:.68rem;font-weight:700;
+  letter-spacing:.06em;text-transform:uppercase;
+  color:var(--c-color, var(--muted));
+  margin-bottom:10px;
+}
+.city-country{
+  font-size:.63rem;color:var(--muted);
+  display:flex;align-items:center;justify-content:center;gap:4px;
+}
+
+/* AVAILABLE badge */
+.city-badge{
+  position:absolute;top:12px;right:12px;
+  font-size:.58rem;font-weight:700;
+  letter-spacing:.06em;text-transform:uppercase;
+  padding:2px 8px;border-radius:100px;
+}
+.badge-live{
+  background:rgba(34,197,94,.15);
+  color:#4ade80;
+  border:1px solid rgba(34,197,94,.3);
+}
+.badge-soon{
+  background:rgba(148,163,184,.08);
+  color:var(--muted);
+  border:1px solid rgba(148,163,184,.15);
+}
+
+/* 도쿄 특별 강조 */
+.city-card.available{
+  border-color:rgba(249,115,22,.35);
+}
+.city-card.available .city-picto{
+  background:rgba(249,115,22,.12);
+  border-color:rgba(249,115,22,.4);
+}
+
+/* ── FOOTER ── */
+.footer{
+  text-align:center;
+  padding:30px 20px;
+  border-top:1px solid var(--card-border);
+  font-size:.68rem;
+  color:var(--muted);
+  line-height:2;
+}
+.footer a{color:var(--muted);text-decoration:none}
+.footer a:hover{color:var(--text)}
+
+/* ── COMING-SOON dim ── */
+.city-card.soon{
+  opacity:.72;
+  cursor:default;
+  pointer-events:none;
+}
+/* hover restore for visual interest */
+.city-card.soon:hover{
+  opacity:.85;
+  transform:translateY(-2px);
+  pointer-events:auto;
+  cursor:not-allowed;
+}
+
+/* ── MOBILE ── */
+@media(max-width:600px){
+  .city-grid{grid-template-columns:repeat(2,1fr)}
+  .hero-title{font-size:1.9rem}
+}
+</style>
+</head>
+<body>
+
+<!-- ── HERO ── -->
+<section class="hero">
+  <div class="hero-badge">
+    <span>●</span> LIVE · 도쿄 · 오사카 · 서울
+  </div>
+  <div class="hero-eyebrow">어서와, 여행은 처음이지?</div>
+  <h1 class="hero-title">
+    숙소는<br>
+    <span class="hl">어디로 할 거야?</span>
+  </h1>
+  <p class="hero-desc">
+    원하는 도시를 골라서<br>
+    <strong>어디서 뭐하고 놀지 정하고</strong><br>
+    위치별 숙소 가격을 보고 결정해봐!
+  </p>
+  <div class="hero-cta-hint">도시를 선택하면 숙소 가격 지도가 열려요</div>
+
+  <!-- CITY GRID (hero 안쪽에 포함) -->
+  <div class="section">
+    <div class="section-label">도시 선택 · Choose a City</div>
+    <div class="city-grid" id="city-grid"></div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div>숙박 가격은 Booking.com 평균 기준 · 실제 가격은 시즌·조건에 따라 다를 수 있습니다</div>
+  <div style="margin-top:4px">© 2025 여행 숙소 가격 지도 · Made with ❤️ for travelers</div>
+</footer>
+
+<script src="shared/city-registry.js"></script>
+<script>
+// city-registry.js에서 CITY_REGISTRY를 로드해서 사용
+// 새 도시 추가 시 shared/city-registry.js 만 수정하면 됩니다
+const CITIES = window.CITY_REGISTRY.map(c => ({
+  id: c.id,
+  ko: c.ko,
+  en: c.en,
+  country: c.country.flag + ' ' + c.country.ko,
+  emoji: c.emoji,
+  color: c.color,
+  glow: c.glow,
+  bg: c.bg,
+  url: c.status === 'live' ? c.file : null,
+  available: c.status === 'live',
+  tagline: c.tagline.ko
+}));
+
+
+function buildGrid(){
+  const grid = document.getElementById('city-grid');
+  grid.innerHTML = CITIES.map(c => {
+    const tag = c.available ? 'a' : 'div';
+    const href = c.available && c.url ? `href="${c.url}"` : '';
+    const cls = c.available ? 'city-card available' : 'city-card soon';
+    const badge = c.available
+      ? `<span class="city-badge badge-live">● LIVE</span>`
+      : `<span class="city-badge badge-soon">준비중</span>`;
+    return `
+      <${tag} class="${cls}" ${href}
+        style="--c-color:${c.color};--c-glow:${c.glow};--c-bg:${c.bg};">
+        ${badge}
+        <div class="city-picto">${c.emoji}</div>
+        <div class="city-name-ko">${c.ko}</div>
+        <div class="city-name-en">${c.en}</div>
+        <div class="city-country">${c.country}</div>
+      </${tag}>`;
+  }).join('');
+}
+
+buildGrid();
+</script>
+</body>
+</html>

@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>도쿄 숙박 가격 지도 | Tokyo Accommodation Map</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,1,0"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#ffffff;--panel:#f8f9fa;--card:#f1f3f5;
+  --border:#e5e7eb;--accent:#e74c3c;
+  --text:#1a1a2e;--muted:#6b7280;
+  --shadow:0 2px 12px rgba(0,0,0,.08);
+}
+body{
+  font-family:-apple-system,'Malgun Gothic','Apple SD Gothic Neo',sans-serif;
+  background:var(--bg);color:var(--text);
+  height:100dvh;display:flex;flex-direction:column;overflow:hidden;
+}
+/* HEADER */
+header{
+  height:62px;background:var(--bg);border-bottom:2px solid var(--border);
+  display:flex;align-items:center;padding:0 20px;gap:14px;
+  flex-shrink:0;z-index:1000;box-shadow:var(--shadow);
+}
+.h-logo{font-size:1.8rem;line-height:1}
+.h-title{font-size:1.08rem;font-weight:800;color:var(--text);white-space:nowrap}
+.h-sub{font-size:0.67rem;color:var(--muted);margin-top:2px}
+.h-divider{width:1px;height:28px;background:var(--border);flex-shrink:0}
+.h-hint{font-size:0.67rem;color:var(--muted);line-height:1.7}
+.h-controls{margin-left:auto;display:flex;gap:8px;align-items:center}
+/* TOGGLE GROUP */
+.toggle-group{display:flex;background:var(--card);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.tg-btn{padding:5px 12px;font-size:0.76rem;border:none;background:transparent;color:var(--muted);cursor:pointer;transition:all .15s;font-weight:500}
+.tg-btn.active{background:var(--accent);color:#fff;font-weight:700}
+/* LAYOUT */
+.main{display:flex;flex:1;overflow:hidden}
+/* SIDEBAR */
+.sidebar{
+  width:262px;background:var(--bg);border-right:2px solid var(--border);
+  display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0;
+  box-shadow:2px 0 8px rgba(0,0,0,.04);
+}
+.sec{padding:14px 15px;border-bottom:1px solid var(--border)}
+.sec-title{
+  font-size:0.67rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.08em;color:var(--muted);margin-bottom:10px;
+  display:flex;align-items:center;gap:6px;
+}
+/* TYPE GRID */
+.type-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.type-btn{
+  background:var(--card);border:2px solid transparent;border-radius:10px;
+  padding:10px 5px 8px;cursor:pointer;transition:all .2s;
+  text-align:center;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:4px;
+}
+.type-btn:hover{border-color:var(--border);color:var(--text);background:#fff;box-shadow:var(--shadow)}
+.type-btn.active{border-color:var(--accent);color:var(--accent);background:#fff5f5;box-shadow:0 2px 8px rgba(231,76,60,.15)}
+.t-picto{
+  width:44px;height:44px;display:flex;align-items:center;justify-content:center;
+  border-radius:10px;background:var(--card);transition:all .2s;
+}
+.type-btn.active .t-picto{background:rgba(231,76,60,.1)}
+.t-picto .material-symbols-outlined{font-size:28px}
+.t-name{font-size:0.71rem;font-weight:700;line-height:1.3}
+.t-range{font-size:0.6rem;color:var(--muted)}
+.type-btn.active .t-range{color:var(--accent)}
+/* LEGEND */
+.leg-bar{height:14px;border-radius:8px;background:linear-gradient(to right,#2ecc71,#f1c40f,#e67e22,#e74c3c,#8e44ad);margin-bottom:7px}
+.leg-labels{display:flex;justify-content:space-between;font-size:.61rem;color:var(--muted)}
+.leg-items{margin-top:9px;display:flex;flex-direction:column;gap:5px}
+.leg-row{display:flex;align-items:center;gap:8px;font-size:.72rem;color:var(--muted)}
+.leg-dot{width:13px;height:13px;border-radius:3px;flex-shrink:0}
+/* NOTES */
+.notes{list-style:none;font-size:.7rem;color:var(--muted);line-height:2}
+.notes li::before{content:'• ';color:var(--accent)}
+/* AREA COUNT */
+.area-count{margin-left:auto;font-size:.63rem;background:var(--card);border:1px solid var(--border);padding:2px 8px;border-radius:10px;color:var(--muted)}
+/* MAP */
+#map{flex:1}
+/* LEAFLET POPUP */
+.leaflet-popup-content-wrapper{border-radius:14px!important;padding:0!important;box-shadow:0 12px 40px rgba(0,0,0,.16)!important;border:1px solid #eee!important}
+.leaflet-popup-content{margin:0!important;padding:16px!important}
+.leaflet-popup-tip-container{display:none}
+/* POPUP */
+.pu-wrap{font-family:-apple-system,'Malgun Gothic',sans-serif;min-width:260px}
+.pu-head{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px}
+.pu-picto{width:50px;height:50px;border-radius:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pu-picto .material-symbols-outlined{font-size:30px;color:#fff}
+.pu-name{font-weight:800;font-size:1rem;color:#1a1a2e}
+.pu-sub{font-size:.67rem;color:#999;margin-top:2px}
+.pu-badge{display:inline-block;background:#f39c12;color:#fff;font-size:.58rem;padding:1px 6px;border-radius:10px;font-weight:700;vertical-align:middle;margin-left:4px}
+.pu-tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:9px}
+.pu-tag{background:#f0f4f8;color:#444;padding:2px 8px;border-radius:10px;font-size:.66rem}
+.pu-table{border:1px solid #eee;border-radius:10px;overflow:hidden;margin-bottom:10px}
+.pu-row{display:flex;justify-content:space-between;align-items:center;padding:6px 10px;border-bottom:1px solid #f5f5f5;font-size:.76rem}
+.pu-row:last-child{border-bottom:none}
+.pu-row.pu-active{background:#fff5f5}
+.pu-label{color:#555;display:flex;align-items:center;gap:5px}
+.pu-val{font-weight:800;color:#e74c3c}
+.pu-night{font-size:.61rem;color:#ccc;font-weight:400}
+.pu-btns{display:flex;gap:6px}
+.pu-btn{flex:1;padding:8px;border:none;border-radius:8px;font-size:.73rem;font-weight:700;cursor:pointer;text-decoration:none;text-align:center;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:4px}
+.pu-btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.15)}
+.pu-google{background:#4285f4;color:#fff}
+.pu-booking{background:#003580;color:#fff}
+.pu-agoda{background:#e7492e;color:#fff}
+/* AREA NAME LABEL on map */
+.area-label{
+  background:rgba(255,255,255,.95);border:2.5px solid transparent;border-radius:18px;
+  padding:9px 16px 8px;font-family:-apple-system,'Malgun Gothic','Apple SD Gothic Neo',sans-serif;
+  color:#1a1a2e;white-space:nowrap;cursor:grab;
+  transition:all .22s cubic-bezier(.25,.8,.25,1);
+  box-shadow:0 3px 14px rgba(0,0,0,.16);backdrop-filter:blur(6px);
+  pointer-events:auto;text-align:center;
+  user-select:none;
+}
+.area-label:active{ cursor:grabbing; }
+.area-label:hover{transform:scale(1.07);box-shadow:0 7px 24px rgba(0,0,0,.24)}
+.al-icons{display:flex;gap:8px;justify-content:center;margin-bottom:6px}
+.al-icons .material-symbols-outlined{font-size:36px;transition:transform .2s}
+.area-label:hover .al-icons .material-symbols-outlined{transform:scale(1.15)}
+.al-name{font-size:28px;font-weight:900;line-height:1.1;letter-spacing:-.02em}
+.al-tagline{font-size:11.5px;color:#555;margin-top:5px;font-weight:500;letter-spacing:-.01em;line-height:1.4;white-space:normal;max-width:200px;word-break:keep-all}
+/* SUBWAY TOOLTIP */
+.subway-tip{background:rgba(15,15,15,.82);border:none!important;color:#fff;font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:7px;box-shadow:0 2px 8px rgba(0,0,0,.4);white-space:nowrap}
+.subway-tip::before{display:none!important}
+/* DISNEY LABEL — 작은 크기, 마법 테마 */
+.disney-label{
+  background:linear-gradient(135deg,rgba(255,232,246,.97) 0%,rgba(255,215,240,.97) 100%);
+  border:2px solid transparent;border-radius:14px;
+  padding:5px 10px 5px;
+  white-space:nowrap;cursor:grab;
+  transition:all .22s cubic-bezier(.25,.8,.25,1);
+  box-shadow:0 3px 14px rgba(233,30,140,.22),0 0 0 1px rgba(233,30,140,.12);
+  backdrop-filter:blur(6px);
+  pointer-events:auto;text-align:center;user-select:none;
+}
+.disney-label:active{cursor:grabbing}
+.disney-label:hover{transform:scale(1.08);box-shadow:0 7px 22px rgba(233,30,140,.38)}
+.dl-icons{display:flex;gap:4px;justify-content:center;margin-bottom:2px}
+.dl-icons .material-symbols-outlined{font-size:18px}
+.dl-name{
+  font-family:'Pacifico',cursive;
+  font-size:14px;font-weight:400;line-height:1.15;
+  letter-spacing:.01em;
+}
+.dl-tag{
+  font-size:8.5px;color:#c0186e;margin-top:3px;
+  font-family:-apple-system,'Malgun Gothic',sans-serif;
+  letter-spacing:.01em;line-height:1.3;opacity:.85;
+}
+/* SUBWAY LINE LIST */
+.sl-item{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)}
+.sl-item:last-child{border-bottom:none}
+.sl-swatch{width:30px;height:8px;border-radius:4px;flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,.18)}
+.sl-name{flex:1;font-size:.69rem;font-weight:600;color:var(--text);line-height:1.25}
+.sl-org{font-size:.59rem;font-weight:400;color:var(--muted);margin-top:1px;display:block}
+/* MOBILE */
+@media(max-width:768px){
+  .main{flex-direction:column-reverse}
+  .sidebar{width:100%;max-height:44vh}
+  #map{min-height:56vh}
+  .h-sub,.h-hint{display:none}
+}
+</style>
+</head>
+<body>
+<header>
+  <span class="h-logo">🗼</span>
+  <div>
+    <div class="h-title" id="h-title">도쿄 숙박 가격 지도</div>
+    <div class="h-sub" id="h-sub">위치별 평균 숙박 요금 · Booking.com 기준</div>
+  </div>
+  <div class="h-divider"></div>
+  <div class="h-hint" id="h-hint">지역 클릭 → 상세 가격 확인<br>★ = 추천 숙박지</div>
+  <div class="h-controls">
+    <div class="toggle-group">
+      <button class="tg-btn active" id="lang-ko" onclick="setLang('ko')">한국어</button>
+      <button class="tg-btn" id="lang-en" onclick="setLang('en')">EN</button>
+      <button class="tg-btn" id="lang-ja" onclick="setLang('ja')">日本語</button>
+    </div>
+    <div class="toggle-group">
+      <button class="tg-btn" id="btn-jpy" onclick="setCur('JPY')">¥ JPY</button>
+      <button class="tg-btn active" id="btn-krw" onclick="setCur('KRW')">₩ KRW</button>
+      <button class="tg-btn" id="btn-usd" onclick="setCur('USD')">$ USD</button>
+    </div>
+  </div>
+</header>
+<div class="main">
+  <div class="sidebar">
+    <div class="sec">
+      <div class="sec-title"><span id="sec-type">숙박 유형 선택</span><span class="area-count" id="area-count">35개 지역</span></div>
+      <div class="type-grid">
+        <button class="type-btn active" onclick="setType('capsule')" id="tab-capsule">
+          <div class="t-picto"><span class="material-symbols-outlined">bedroom_parent</span></div>
+          <span class="t-name" id="tn-capsule">캡슐호텔</span>
+          <span class="t-range" id="tr-capsule"></span>
+        </button>
+        <button class="type-btn" onclick="setType('hostel')" id="tab-hostel">
+          <div class="t-picto"><span class="material-symbols-outlined">backpack</span></div>
+          <span class="t-name" id="tn-hostel">호스텔/게하</span>
+          <span class="t-range" id="tr-hostel"></span>
+        </button>
+        <button class="type-btn" onclick="setType('budget')" id="tab-budget">
+          <div class="t-picto"><span class="material-symbols-outlined">apartment</span></div>
+          <span class="t-name" id="tn-budget">비즈니스 ★★</span>
+          <span class="t-range" id="tr-budget"></span>
+        </button>
+        <button class="type-btn" onclick="setType('standard')" id="tab-standard">
+          <div class="t-picto"><span class="material-symbols-outlined">hotel</span></div>
+          <span class="t-name" id="tn-standard">스탠다드 ★★★</span>
+          <span class="t-range" id="tr-standard"></span>
+        </button>
+        <button class="type-btn" onclick="setType('premium')" id="tab-premium">
+          <div class="t-picto"><span class="material-symbols-outlined">star</span></div>
+          <span class="t-name" id="tn-premium">프리미엄 ★★★★</span>
+          <span class="t-range" id="tr-premium"></span>
+        </button>
+        <button class="type-btn" onclick="setType('luxury')" id="tab-luxury">
+          <div class="t-picto"><span class="material-symbols-outlined">diamond</span></div>
+          <span class="t-name" id="tn-luxury">럭셔리 ★★★★★</span>
+          <span class="t-range" id="tr-luxury"></span>
+        </button>
+      </div>
+    </div>
+    <div class="sec">
+      <div class="sec-title" id="sec-legend">가격 색상 기준</div>
+      <div class="leg-bar"></div>
+      <div class="leg-labels">
+        <span id="ll0">저렴</span><span id="ll1">보통</span>
+        <span id="ll2">비쌈</span><span id="ll3">고급</span>
+      </div>
+      <div class="leg-items">
+        <div class="leg-row"><div class="leg-dot" style="background:#2ecc71"></div><span id="lc0">매우 저렴</span></div>
+        <div class="leg-row"><div class="leg-dot" style="background:#27ae60"></div><span id="lc1">저렴</span></div>
+        <div class="leg-row"><div class="leg-dot" style="background:#f1c40f"></div><span id="lc2">보통</span></div>
+        <div class="leg-row"><div class="leg-dot" style="background:#e67e22"></div><span id="lc3">약간 비쌈</span></div>
+        <div class="leg-row"><div class="leg-dot" style="background:#e74c3c"></div><span id="lc4">비쌈</span></div>
+        <div class="leg-row"><div class="leg-dot" style="background:#8e44ad"></div><span id="lc5">럭셔리</span></div>
+      </div>
+    </div>
+    <div class="sec">
+      <div class="sec-title" id="sec-notes">안내사항</div>
+      <ul class="notes">
+        <li id="nt0">절대적인 수치 아님 (참고용)</li>
+        <li id="nt1">Booking.com 평균가 기준</li>
+        <li id="nt2">성수기·이벤트 시 변동 큼</li>
+        <li id="nt3">별(★)은 추천 숙박 위치</li>
+        <li id="nt4">최종 업데이트 2024/08</li>
+      </ul>
+    </div>
+    <div class="sec">
+      <div class="sec-title" id="sec-subway">🚇 지하철 노선</div>
+      <div id="subway-list"></div>
+    </div>
+  </div>
+  <div id="map"></div>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ══════════════════════════════════════════
+// TRANSLATIONS
+// ══════════════════════════════════════════
+const TR = {
+  ko:{
+    title:'도쿄 숙박 가격 지도', sub:'위치별 평균 숙박 요금 · Booking.com 기준',
+    hint:'지역 클릭 → 상세 가격 확인 / ★ = 추천',
+    secType:'숙박 유형 선택', secLegend:'가격 색상 기준', secNotes:'안내사항', secSubway:'🚇 지하철 노선',
+    types:{capsule:'캡슐호텔',hostel:'호스텔/게하',budget:'비즈니스 ★★',standard:'스탠다드 ★★★',premium:'프리미엄 ★★★★',luxury:'럭셔리 ★★★★★'},
+    legLabels:['저렴','보통','비쌈','고급'],
+    legColors:['매우 저렴','저렴','보통','약간 비쌈','비쌈','럭셔리'],
+    notes:['절대적인 수치 아님 (참고용)','Booking.com 평균가 기준','성수기·이벤트 시 변동 큼','별(★)은 추천 숙박 위치','최종 업데이트 2024/08'],
+    rec:'추천', perNight:'/박', avgPrice:'평균 숙박 가격 (1박 · 2인 기준)', unit:'개 지역',
+  },
+  en:{
+    title:'Tokyo Accommodation Map', sub:'Average room rates by area · Based on Booking.com',
+    hint:'Click area → See prices / ★ = Recommended',
+    secType:'Accommodation Type', secLegend:'Price Color Guide', secNotes:'Notes', secSubway:'🚇 Subway Lines',
+    types:{capsule:'Capsule Hotel',hostel:'Hostel/Guesthouse',budget:'Business ★★',standard:'Standard ★★★',premium:'Premium ★★★★',luxury:'Luxury ★★★★★'},
+    legLabels:['Cheap','Mid','Exp','Luxury'],
+    legColors:['Very Cheap','Cheap','Moderate','Slightly Exp.','Expensive','Luxury'],
+    notes:['Approximate figures only','Based on Booking.com averages','Prices vary by season/events','★ = Recommended area','Last updated 2024/08'],
+    rec:'Rec', perNight:'/night', avgPrice:'Avg. price per night (2 guests)', unit:' areas',
+  },
+  ja:{
+    title:'東京宿泊価格マップ', sub:'エリア別平均宿泊料金 · Booking.com基準',
+    hint:'エリアをクリック → 詳細価格 / ★ = おすすめ',
+    secType:'宿泊タイプ', secLegend:'価格カラー基準', secNotes:'注意事項', secSubway:'🚇 地下鉄路線',
+    types:{capsule:'カプセルホテル',hostel:'ホステル',budget:'ビジネス ★★',standard:'スタンダード ★★★',premium:'プレミアム ★★★★',luxury:'ラグジュアリー ★★★★★'},
+    legLabels:['安い','普通','高い','高級'],
+    legColors:['格安','安い','普通','やや高い','高い','高級'],
+    notes:['参考値のみ','Booking.com平均価格基準','シーズンにより変動あり','★はおすすめエリア','最終更新 2024/08'],
+    rec:'おすすめ', perNight:'/泊', avgPrice:'1泊平均価格（2名）', unit:'エリア',
+  }
+};
+// ══════════════════════════════════════════
+// AREA DATA
+// ══════════════════════════════════════════
+const AREAS = [
+  {id:'shinjuku',ko:'신주쿠',en:'Shinjuku',ja:'新宿',coords:[35.6896,139.7006],rec:true,icon:'location_city',
+   sKo:['신주쿠 교엔','가부키초','오모이데 요코초','도쿄 도청'],
+   sEn:['Shinjuku Gyoen','Kabukicho','Omoide Yokocho','Tokyo Metro. Govt'],
+   sJa:['新宿御苑','歌舞伎町','思い出横丁','都庁'],
+   prices:{capsule:4200,hostel:4900,budget:13000,standard:24000,premium:48000,luxury:96000},radius:700},
+
+  {id:'shibuya',ko:'시부야',en:'Shibuya',ja:'渋谷',coords:[35.6580,139.7016],rec:true,icon:'directions_walk',
+   sKo:['스크램블 교차로','하치코 동상','시부야 스카이','미야시타 파크'],
+   sEn:['Scramble Crossing','Hachiko Statue','Shibuya Sky','Miyashita Park'],
+   sJa:['スクランブル交差点','ハチ公像','渋谷スカイ','宮下パーク'],
+   prices:{capsule:4800,hostel:5500,budget:15500,standard:28000,premium:56000,luxury:115000},radius:660},
+
+  {id:'ikebukuro',ko:'이케부쿠로',en:'Ikebukuro',ja:'池袋',coords:[35.7295,139.7109],rec:true,icon:'shopping_bag',
+   sKo:['선샤인시티','선샤인 수족관','웨스트 게이트 파크'],
+   sEn:['Sunshine City','Sunshine Aquarium','West Gate Park'],
+   sJa:['サンシャインシティ','サンシャイン水族館','西口公園'],
+   prices:{capsule:3700,hostel:4200,budget:11500,standard:21000,premium:42000,luxury:83000},radius:680},
+
+  {id:'ueno',ko:'우에노',en:'Ueno',ja:'上野',coords:[35.7141,139.7774],rec:true,icon:'park',
+   sKo:['우에노 공원','도쿄 국립박물관','아메요코 시장','우에노 동물원'],
+   sEn:['Ueno Park','Tokyo National Museum','Ameyoko Market','Ueno Zoo'],
+   sJa:['上野公園','東京国立博物館','アメ横','上野動物園'],
+   prices:{capsule:3200,hostel:3900,budget:10000,standard:18000,premium:35000,luxury:68000},radius:620},
+
+  {id:'akihabara',ko:'아키하바라',en:'Akihabara',ja:'秋葉原',coords:[35.6983,139.7732],rec:false,icon:'sports_esports',
+   sKo:['전자상가','아니메 숍','메이드 카페','라디오 회관'],
+   sEn:['Electronics District','Anime Shops','Maid Café','Radio Kaikan'],
+   sJa:['電気街','アニメショップ','メイドカフェ','ラジオ会館'],
+   prices:{capsule:3600,hostel:4100,budget:10500,standard:19500,premium:38000,luxury:73000},radius:520},
+
+  {id:'tokyo',ko:'도쿄역',en:'Tokyo Station',ja:'東京駅',coords:[35.6812,139.7671],rec:false,icon:'train',
+   sKo:['황거','마루노우치','도쿄 스테이션 갤러리','KITTE'],
+   sEn:['Imperial Palace','Marunouchi','Tokyo Station Gallery','KITTE'],
+   sJa:['皇居','丸の内','東京ステーションギャラリー','KITTE'],
+   prices:{capsule:5200,hostel:6200,budget:16500,standard:33000,premium:66000,luxury:145000},radius:640},
+  {id:'ginza',ko:'긴자',en:'Ginza',ja:'銀座',coords:[35.6695,139.7632],rec:false,icon:'diamond',
+   sKo:['긴자 쇼핑','긴자 식스','더 긴자','츠키지 시장'],
+   sEn:['Ginza Shopping','Ginza Six','The Ginza','Tsukiji Market'],
+   sJa:['銀座ショッピング','GINZA SIX','ザ・ギンザ','築地市場'],
+   prices:{capsule:6500,hostel:7200,budget:19500,standard:41000,premium:82000,luxury:185000},radius:550},
+
+  {id:'roppongi',ko:'롯폰기',en:'Roppongi',ja:'六本木',coords:[35.6629,139.7317],rec:false,icon:'palette',
+   sKo:['롯폰기 힐스','도쿄 미드타운','모리 미술관','국립 신미술관'],
+   sEn:['Roppongi Hills','Tokyo Midtown','Mori Art Museum','National Art Center'],
+   sJa:['六本木ヒルズ','東京ミッドタウン','森美術館','国立新美術館'],
+   prices:{capsule:5800,hostel:6600,budget:17500,standard:37000,premium:74000,luxury:165000},radius:560},
+
+  {id:'harajuku',ko:'하라주쿠',en:'Harajuku',ja:'原宿',coords:[35.6654,139.7026],rec:false,icon:'style',
+   sKo:['다케시타 거리','메이지 신궁','오모테산도 힐스'],
+   sEn:['Takeshita Street','Meiji Shrine','Omotesando Hills'],
+   sJa:['竹下通り','明治神宮','表参道ヒルズ'],
+   prices:{capsule:5000,hostel:5800,budget:15500,standard:30000,premium:60000,luxury:126000},radius:510},
+
+  {id:'ebisu',ko:'에비스',en:'Ebisu',ja:'恵比寿',coords:[35.6468,139.7101],rec:false,icon:'local_bar',
+   sKo:['야에비스 맥주기념관','에비스 가든플레이스','다이칸야마 T-SITE'],
+   sEn:['Yebisu Beer Museum','Yebisu Garden Place','Daikanyama T-SITE'],
+   sJa:['恵比寿ビール記念館','恵比寿ガーデンプレイス','代官山T-SITE'],
+   prices:{capsule:5400,hostel:6200,budget:17000,standard:35000,premium:70000,luxury:152000},radius:500},
+
+  {id:'meguro',ko:'메구로',en:'Meguro',ja:'目黒',coords:[35.6337,139.7158],rec:false,icon:'local_florist',
+   sKo:['나카메구로 벚꽃길','메구로 강변','기생충 박물관'],
+   sEn:['Nakameguro Cherry Blossoms','Meguro River','Parasite Museum'],
+   sJa:['中目黒の桜','目黒川','寄生虫博物館'],
+   prices:{capsule:4800,hostel:5500,budget:14000,standard:27000,premium:54000,luxury:110000},radius:480},
+
+  {id:'shinagawa',ko:'시나가와',en:'Shinagawa',ja:'品川',coords:[35.6284,139.7387],rec:false,icon:'directions_railway',
+   sKo:['시나가와 수족관','신칸센 환승역'],sEn:['Shinagawa Aquarium','Shinkansen Hub'],sJa:['しながわ水族館','新幹線乗換駅'],
+   prices:{capsule:4500,hostel:5200,budget:14000,standard:26000,premium:52000,luxury:104000},radius:550},
+
+  {id:'osaki',ko:'오사키',en:'Osaki',ja:'大崎',coords:[35.6197,139.7280],rec:false,icon:'business',
+   sKo:['소니 시티','오사키 브라이트코어'],sEn:['Sony City','Osaki Bright Core'],sJa:['ソニーシティ','大崎ブライトコア'],
+   prices:{capsule:4000,hostel:4600,budget:12000,standard:22000,premium:44000,luxury:88000},radius:450},
+
+  {id:'gotanda',ko:'고탄다',en:'Gotanda',ja:'五反田',coords:[35.6262,139.7237],rec:false,icon:'storefront',
+   sKo:['고탄다 쇼핑'],sEn:['Gotanda Shopping'],sJa:['五反田商店街'],
+   prices:{capsule:3800,hostel:4300,budget:11000,standard:20000,premium:40000,luxury:79000},radius:430},
+
+  {id:'yoyogi',ko:'요요기',en:'Yoyogi',ja:'代々木',coords:[35.6830,139.7020],rec:false,icon:'nature',
+   sKo:['요요기 공원','올림픽 기념관'],sEn:['Yoyogi Park','Olympic Memorial'],sJa:['代々木公園','オリンピック記念館'],
+   prices:{capsule:4200,hostel:4800,budget:13000,standard:24000,premium:48000,luxury:95000},radius:430},
+  {id:'shinokubo',ko:'신오쿠보',en:'Shin-Okubo',ja:'新大久保',coords:[35.7004,139.7004],rec:false,icon:'restaurant',
+   sKo:['코리아타운','한국 음식 거리','K-POP 숍'],sEn:['Korea Town','Korean Food Street','K-POP Shops'],sJa:['コリアンタウン','韓国料理街','K-POPショップ'],
+   prices:{capsule:3600,hostel:4200,budget:11000,standard:20000,premium:40000,luxury:79000},radius:440},
+
+  {id:'takadanobaba',ko:'타카다노바바',en:'Takadanobaba',ja:'高田馬場',coords:[35.7133,139.7037],rec:false,icon:'school',
+   sKo:['와세다 대학교','학생 거리'],sEn:['Waseda University','Student Area'],sJa:['早稲田大学','学生街'],
+   prices:{capsule:3400,hostel:3900,budget:10500,standard:19000,premium:37000,luxury:72000},radius:430},
+
+  {id:'mejiro',ko:'메지로',en:'Mejiro',ja:'目白',coords:[35.7212,139.7063],rec:false,icon:'yard',
+   sKo:['메지로 정원','가쿠슈인 대학교'],sEn:['Mejiro Garden','Gakushuin Univ.'],sJa:['目白庭園','学習院大学'],
+   prices:{capsule:3600,hostel:4100,budget:11000,standard:20000,premium:40000,luxury:77000},radius:410},
+
+  {id:'otsuka',ko:'오츠카',en:'Otsuka',ja:'大塚',coords:[35.7277,139.7285],rec:false,icon:'tram',
+   sKo:['도덴 아라카와선'],sEn:['Toden Arakawa Line'],sJa:['都電荒川線'],
+   prices:{capsule:3200,hostel:3700,budget:10000,standard:18500,premium:36000,luxury:70000},radius:400},
+
+  {id:'sugamo',ko:'스가모',en:'Sugamo',ja:'巣鴨',coords:[35.7330,139.7393],rec:false,icon:'temple_buddhist',
+   sKo:['스가모 지조 거리','도겐지 절'],sEn:["Sugamo Jizo Dori","Togenji Temple"],sJa:['巣鴨地蔵通り','東源寺'],
+   prices:{capsule:3000,hostel:3500,budget:9500,standard:17500,premium:34000,luxury:66000},radius:420},
+
+  {id:'komagome',ko:'코마고메',en:'Komagome',ja:'駒込',coords:[35.7362,139.7476],rec:false,icon:'forest',
+   sKo:['리쿠기엔 정원'],sEn:['Rikugien Garden'],sJa:['六義園'],
+   prices:{capsule:3200,hostel:3700,budget:10000,standard:18500,premium:36000,luxury:70000},radius:420},
+
+  {id:'tabata',ko:'타바타',en:'Tabata',ja:'田端',coords:[35.7381,139.7614],rec:false,icon:'cottage',
+   sKo:['타바타 문화촌','야나카 지역'],sEn:['Tabata Art Village','Yanaka Area'],sJa:['田端文士村','谷中エリア'],
+   prices:{capsule:3000,hostel:3500,budget:9500,standard:17500,premium:34000,luxury:66000},radius:400},
+
+  {id:'nippori',ko:'닛포리',en:'Nippori',ja:'日暮里',coords:[35.7281,139.7707],rec:false,icon:'content_cut',
+   sKo:['야나카 긴자','닛포리 섬유 거리'],sEn:['Yanaka Ginza','Nippori Textile Town'],sJa:['谷中銀座','日暮里繊維街'],
+   prices:{capsule:2800,hostel:3300,budget:9000,standard:16500,premium:32000,luxury:63000},radius:430},
+
+  {id:'uguisudani',ko:'우구이스다니',en:'Uguisudani',ja:'鶯谷',coords:[35.7208,139.7777],rec:false,icon:'nightlife',
+   sKo:['야나카 지역 관문'],sEn:['Gateway to Yanaka'],sJa:['谷中エリアの玄関口'],
+   prices:{capsule:2600,hostel:3000,budget:8500,standard:15500,premium:30000,luxury:58000},radius:380},
+
+  {id:'okachimachi',ko:'오카치마치',en:'Okachimachi',ja:'御徒町',coords:[35.7070,139.7740],rec:false,icon:'diamond_turn_right',
+   sKo:['아메요코 시장','주얼리 타운'],sEn:['Ameyoko Market','Jewelry Town'],sJa:['アメ横','ジュエリータウン'],
+   prices:{capsule:3000,hostel:3600,budget:9500,standard:17000,premium:33000,luxury:64000},radius:400},
+
+  {id:'kanda',ko:'칸다',en:'Kanda',ja:'神田',coords:[35.6921,139.7712],rec:false,icon:'menu_book',
+   sKo:['간다 고서점 거리','진보초'],sEn:['Kanda Bookstore St.','Jimbocho'],sJa:['神田古書店街','神保町'],
+   prices:{capsule:4000,hostel:4600,budget:11500,standard:21000,premium:42000,luxury:83000},radius:450},
+
+  {id:'yurakucho',ko:'유라쿠쵸',en:'Yurakucho',ja:'有楽町',coords:[35.6752,139.7631],rec:false,icon:'theater_comedy',
+   sKo:['도쿄 국제 포럼','히비야 공원'],sEn:['Tokyo Int\'l Forum','Hibiya Park'],sJa:['東京国際フォーラム','日比谷公園'],
+   prices:{capsule:5600,hostel:6400,budget:17500,standard:37000,premium:74000,luxury:158000},radius:480},
+
+  {id:'shimbashi',ko:'신바시',en:'Shimbashi',ja:'新橋',coords:[35.6659,139.7577],rec:false,icon:'local_bar',
+   sKo:['샐러리맨의 성지','야키토리 골목','구 신바시 역'],sEn:['Salarymen Hub','Yakitori Alley','Old Shimbashi Stn.'],sJa:['サラリーマンの聖地','焼き鳥横丁','旧新橋停車場'],
+   prices:{capsule:5000,hostel:5800,budget:15000,standard:30000,premium:60000,luxury:125000},radius:480},
+
+  {id:'hamamatsucho',ko:'하마마츠초',en:'Hamamatsucho',ja:'浜松町',coords:[35.6556,139.7567],rec:false,icon:'flight',
+   sKo:['도쿄 모노레일','세계무역센터','하마리큐 정원'],sEn:['Tokyo Monorail','World Trade Center','Hamarikyu Gardens'],sJa:['東京モノレール','世界貿易センター','浜離宮恩賜庭園'],
+   prices:{capsule:4800,hostel:5500,budget:14500,standard:28000,premium:56000,luxury:115000},radius:460},
+
+  {id:'tamachi',ko:'타마치',en:'Tamachi',ja:'田町',coords:[35.6454,139.7471],rec:false,icon:'corporate_fare',
+   sKo:['게이오 대학교','시바 공원','도쿄 타워 근접'],sEn:['Keio University','Shiba Park','Near Tokyo Tower'],sJa:['慶應義塾大学','芝公園','東京タワー近く'],
+   prices:{capsule:4600,hostel:5300,budget:14000,standard:27000,premium:54000,luxury:110000},radius:450},
+
+  {id:'toyosu',ko:'토요스',en:'Toyosu',ja:'豊洲',coords:[35.6551,139.7957],rec:false,icon:'set_meal',
+   sKo:['도요스 시장','팀랩 플래닛','치이파노 도쿄'],sEn:['Toyosu Market','teamLab Planets','Zepp Tokyo'],sJa:['豊洲市場','チームラボプラネッツ','豊洲ベース'],
+   prices:{capsule:4200,hostel:4900,budget:13000,standard:25000,premium:50000,luxury:100000},radius:480},
+
+  {id:'asakusa',ko:'아사쿠사',en:'Asakusa',ja:'浅草',coords:[35.7148,139.7967],rec:true,icon:'temple_buddhist',
+   sKo:['센소지','나카미세 거리','아사쿠사 문화관광센터','스카이트리 뷰'],
+   sEn:['Senso-ji','Nakamise Street','Asakusa Tourism Info.','Skytree View'],
+   sJa:['浅草寺','仲見世通り','浅草文化観光センター','スカイツリービュー'],
+   prices:{capsule:3500,hostel:4200,budget:11000,standard:21000,premium:42000,luxury:83000},radius:580},
+
+  {id:'skytree',ko:'스카이트리',en:'Skytree',ja:'スカイツリー',coords:[35.7101,139.8107],rec:false,icon:'cell_tower',
+   sKo:['도쿄 스카이트리','소라마치','스미다 수족관'],sEn:['Tokyo Skytree','Solamachi','Sumida Aquarium'],sJa:['東京スカイツリー','ソラマチ','すみだ水族館'],
+   prices:{capsule:3200,hostel:3800,budget:10000,standard:19000,premium:38000,luxury:74000},radius:480},
+
+  {id:'odaiba',ko:'오다이바',en:'Odaiba',ja:'お台場',coords:[35.6267,139.7752],rec:false,icon:'beach_access',
+   sKo:['팀랩 보더리스','다이버시티','건담 동상','후지TV'],sEn:['teamLab Borderless','DiverCity','Gundam Statue','Fuji TV'],sJa:['チームラボボーダレス','ダイバーシティ','ガンダム像','フジテレビ'],
+   prices:{capsule:4500,hostel:5200,budget:14000,standard:27000,premium:54000,luxury:110000},radius:600},
+
+  {id:'shimokitazawa',ko:'시모키타자와',en:'Shimokitazawa',ja:'下北沢',coords:[35.6613,139.6681],rec:false,icon:'music_note',
+   sKo:['라이브하우스','빈티지 숍','인디 뮤직 씬','테라스 하우스 촬영지'],sEn:['Live Houses','Vintage Shops','Indie Music Scene','Terrace House Location'],sJa:['ライブハウス','ヴィンテージショップ','インディーミュージック','テラスハウスロケ地'],
+   prices:{capsule:3800,hostel:4400,budget:11500,standard:21000,premium:42000,luxury:82000},radius:480},
+];
+
+// ══════════════════════════════════════════
+// AREA META (taglines + multi-icons)
+// ══════════════════════════════════════════
+const AREA_META = {
+  shinjuku:{tagKo:'도쿄 최대의 번화가, 낮과 밤이 빛나는 중심지',tagEn:"Tokyo's neon city that never sleeps",tagJa:'東京最大の繁華街、昼も夜も輝く中心地',icons:['location_city','nightlife','train','shopping_bag']},
+  shibuya:{tagKo:'세계가 주목하는 트렌드의 발원지',tagEn:'Where global trends are born',tagJa:'世界が注目するトレンドの発信地',icons:['directions_walk','shopping_bag','music_note','photo_camera']},
+  ikebukuro:{tagKo:'아니메·쇼핑·먹거리가 모두 모인 북쪽의 중심',tagEn:'Anime, malls & flavours of the north',tagJa:'アニメ・ショッピング・グルメが集まる北の中心',icons:['shopping_bag','sports_esports','local_dining','train']},
+  ueno:{tagKo:'박물관·동물원·공원, 도쿄의 문화 보고',tagEn:'Museums, pandas & cherry-blossom haven',tagJa:'博物館・動物園・公園が揃う文化の宝庫',icons:['park','museum','pets','temple_buddhist']},
+  akihabara:{tagKo:'일본 아니메·전자제품의 성지',tagEn:"Japan's anime & electronics mecca",tagJa:'日本のアニメ・電子製品の聖地',icons:['sports_esports','memory','toys','headphones']},
+  tokyo:{tagKo:'일본 철도의 심장, 황거의 관문',tagEn:'The grand gateway of imperial Japan',tagJa:'日本の鉄道の心臓、皇居の玄関口',icons:['train','castle','business_center','map']},
+  ginza:{tagKo:'도쿄 최고급 쇼핑과 미식의 거리',tagEn:"Tokyo's most prestigious shopping strip",tagJa:'東京最高級のショッピング・グルメの街',icons:['diamond','restaurant','local_mall','wine_bar']},
+  roppongi:{tagKo:'예술과 나이트라이프가 공존하는 국제 구역',tagEn:'Art, nightlife & cosmopolitan culture',tagJa:'アートとナイトライフが共存する国際エリア',icons:['palette','nightlife','museum','language']},
+  harajuku:{tagKo:'일본 서브컬처 패션의 발신지',tagEn:'Birthplace of Japanese street fashion',tagJa:'日本ストリートファッションの発信地',icons:['style','storefront','temple_shinto','photo_camera']},
+  ebisu:{tagKo:'세련된 카페와 맥주의 도시, 다이칸야마',tagEn:'Chic cafés, craft beer & Daikanyama',tagJa:'洗練されたカフェとビールの街',icons:['local_bar','coffee','local_florist','photo_camera']},
+  meguro:{tagKo:'나카메구로 벚꽃길, 힙스터의 성지',tagEn:'Sakura riverside & hip café culture',tagJa:'中目黒の桜並木、ヒップスターカフェの聖地',icons:['local_florist','coffee','directions_walk','forest']},
+  shinagawa:{tagKo:'신칸센 환승역, 비즈니스의 거점',tagEn:'Bullet train hub & business district',tagJa:'新幹線乗換駅とビジネス街の拠点',icons:['directions_railway','business_center','hotel','flight']},
+  osaki:{tagKo:'소니 본사와 IT 기업들의 비즈니스 타운',tagEn:"Sony HQ & corporate tech district",tagJa:'ソニー本社とIT企業のビジネスタウン',icons:['business','computer','apartment','directions_railway']},
+  gotanda:{tagKo:'조용한 주거·쇼핑이 공존하는 동네',tagEn:'Low-key shopping & residential mix',tagJa:'静かな住宅とショッピングが共存する街',icons:['storefront','apartment','train','local_dining']},
+  yoyogi:{tagKo:'도쿄의 허파, 거대한 공원과 메이지 신궁',tagEn:"Tokyo's green lung & Meiji Shrine forest",tagJa:'東京の緑の肺、代々木公園と明治神宮',icons:['nature','park','temple_shinto','directions_walk']},
+  shinokubo:{tagKo:'도쿄 속 작은 서울, K-컬처의 메카',tagEn:'Little Seoul in Tokyo, K-culture mecca',tagJa:'東京の中の小さなソウル、K文化のメッカ',icons:['restaurant','music_note','storefront','groups']},
+  takadanobaba:{tagKo:'와세다 대학 앞, 활기찬 학생 거리',tagEn:"Waseda's lively student town",tagJa:'早稲田大学の活気ある学生街',icons:['school','local_dining','menu_book','groups']},
+  mejiro:{tagKo:'조용하고 격조 있는 고급 주택가',tagEn:'Quiet, refined & upscale neighbourhood',tagJa:'静かで品格ある高級住宅地',icons:['yard','local_florist','school','apartment']},
+  otsuka:{tagKo:'도덴 전차가 달리는 레트로 정취의 거리',tagEn:'Retro tram town with old-school charm',tagJa:'都電が走るレトロな情緒あふれる街',icons:['tram','storefront','local_bar','cottage']},
+  sugamo:{tagKo:'할머니의 하라주쿠, 장수와 불심의 거리',tagEn:"Grandma's Harajuku, Japan's longevity street",tagJa:'おばあちゃんの原宿、長寿と信仰の街',icons:['temple_buddhist','self_improvement','storefront','local_pharmacy']},
+  komagome:{tagKo:'리쿠기엔 정원, 도쿄의 숨겨진 일본식 정원',tagEn:"Rikugien: Tokyo's hidden strolling garden",tagJa:'六義園、東京の隠れた日本庭園の名所',icons:['forest','park','nature','directions_walk']},
+  tabata:{tagKo:'문인과 예술가가 사랑한 문화마을',tagEn:'Artsy village beloved by writers & painters',tagJa:'文人と芸術家が愛した文化村',icons:['cottage','palette','menu_book','forest']},
+  nippori:{tagKo:'섬유 도매상가와 야나카 긴자의 정취',tagEn:'Fabric market meets nostalgic shopping street',tagJa:'繊維街と谷中銀座の情緒',icons:['content_cut','storefront','temple_buddhist','local_dining']},
+  uguisudani:{tagKo:'야나카 옛 도쿄의 조용한 관문',tagEn:"Quiet gateway to old Tokyo's Yanaka",tagJa:'谷中、旧東京への静かな玄関口',icons:['nightlife','temple_buddhist','cottage','directions_walk']},
+  okachimachi:{tagKo:'활기찬 아메요코 시장과 주얼리 타운',tagEn:'Bustling Ameyoko market & jewellery hub',tagJa:'活気あるアメ横市場とジュエリータウン',icons:['storefront','shopping_bag','local_dining','diamond']},
+  kanda:{tagKo:'고서점이 즐비한 진보초, 책의 성지',tagEn:'Jimbocho: paradise for book lovers',tagJa:'古書店が並ぶ神保町、本の聖地',icons:['menu_book','school','local_cafe','history_edu']},
+  yurakucho:{tagKo:'이자카야 골목과 도쿄 국제 포럼의 거리',tagEn:'Izakaya alleys meet Tokyo International Forum',tagJa:'居酒屋横丁と東京国際フォーラムの街',icons:['theater_comedy','local_bar','business_center','train']},
+  shimbashi:{tagKo:'샐러리맨들의 야키토리 성지',tagEn:"Tokyo's favourite post-work yakitori alley",tagJa:'サラリーマンの焼き鳥の聖地',icons:['local_bar','restaurant','train','business_center']},
+  hamamatsucho:{tagKo:'하네다 모노레일 출발역, 바닷가 정원의 관문',tagEn:'Haneda monorail hub & seaside gardens',tagJa:'羽田モノレール乗換駅と浜離宮の玄関口',icons:['flight','directions_railway','local_florist','directions_boat']},
+  tamachi:{tagKo:'게이오 대학가, 도쿄 타워와 가까운 곳',tagEn:'Keio campus & a stroll from Tokyo Tower',tagJa:'慶應大学と東京タワーに近い街',icons:['corporate_fare','school','cell_tower','local_dining']},
+  toyosu:{tagKo:'세계 최대 수산시장과 팀랩의 미래도시',tagEn:"World's biggest fish market & teamLab Planets",tagJa:'世界最大の魚市場とチームラボの未来都市',icons:['set_meal','museum','directions_boat','sports_esports']},
+  asakusa:{tagKo:'700년 역사 센소지, 전통 도쿄의 심장',tagEn:'Senso-ji & the living soul of old Tokyo',tagJa:'浅草寺と江戸情緒あふれる下町の心',icons:['temple_buddhist','storefront','palette','local_dining']},
+  skytree:{tagKo:'세계 2위 전파탑, 소라마치와 스카이 전망',tagEn:"Sky-high views from the world's 2nd tallest tower",tagJa:'世界第2位の電波塔からの絶景とソラマチ',icons:['cell_tower','visibility','shopping_bag','set_meal']},
+  odaiba:{tagKo:'팀랩과 건담, 디즈니랜드 인근의 미래적 인공섬',tagEn:'teamLab, Gundam & near Tokyo Disneyland',tagJa:'チームラボ・ガンダム・ディズニーランド近くの未来島',icons:['beach_access','castle','sports_esports','directions_boat']},
+  shimokitazawa:{tagKo:'인디 음악과 빈티지 패션의 성지',tagEn:"Tokyo's indie music & vintage fashion hub",tagJa:'インディーミュージックとヴィンテージファッションの聖地',icons:['music_note','style','local_bar','coffee']},
+};
+
+// ══════════════════════════════════════════
+// AREA DISTINCT COLORS  (폴리곤·라벨 전용)
+// ══════════════════════════════════════════
+const AREA_COLORS = {
+  shinjuku:'#E74C3C', shibuya:'#8E44AD', ikebukuro:'#2471A3',
+  ueno:'#1E8449',     akihabara:'#D35400', ginza:'#922B21',
+  roppongi:'#6C3483', asakusa:'#B7950B',  harajuku:'#A04000',
+  tokyo:'#1B2631',    skytree:'#0E6655',  odaiba:'#1A5276',
+  shimokitazawa:'#117A65'
+};
+
+// 라벨 카드 오프셋 { off:[latDelta,lngDelta], dir:'n'|'s'|'e'|'w'|'ne'|'nw'|'se'|'sw' }
+// dir 은 라벨이 역 원형에서 어느 방향에 위치하는지를 나타냄
+// → 라벨 박스의 앵커 엣지가 labelPos에 닿아 화살표가 박스 엣지를 정확히 가리킴
+const LABEL_OFFSETS = {
+  shinjuku:      { off:[ 0.025, -0.034], dir:'w'  }, // 서  — 역 우측 피함, 시모키타 y>541
+  ikebukuro:     { off:[ 0.000, -0.034], dir:'nw' }, // 북서 — 역 우측 피함
+  harajuku:      { off:[ 0.043, -0.036], dir:'w'  }, // 서  — 역 우측+시모키타 y>547
+  shibuya:       { off:[-0.022,  0.000], dir:'s'  }, // 남  — 박스 아래로
+  shimokitazawa: { off:[ 0.000, -0.020], dir:'w'  }, // 서  — 박스 왼쪽
+  roppongi:      { off:[ 0.000, -0.007], dir:'s'  }, // 남  — 시부야x<597 피함
+  ginza:         { off:[-0.018, -0.026], dir:'se' }, // 남동 — 오다이바y<686,도쿄역x<692
+  tokyo:         { off:[ 0.000,  0.022], dir:'e'  }, // 동  — 오다이바 피함
+  akihabara:     { off:[-0.008,  0.000], dir:'e'  }, // 동  — 박스 남쪽으로 이동, 우에노/아사쿠사/스카이트리 y<482
+  odaiba:        { off:[ 0.000,  0.022], dir:'e'  }, // 동  — 박스 오른쪽
+  ueno:          { off:[ 0.000, -0.025], dir:'nw' }, // 북서 — 이케부쿠로x<618 피함
+  asakusa:       { off:[ 0.002, -0.020], dir:'ne' }, // 북동 — anchor 북쪽으로 7px, 우에노/스카이트리 y>452
+  skytree:       { off:[ 0.000,  0.030], dir:'e'  }, // 동  — 박스 오른쪽
+};
+
+// ══════════════════════════════════════════
+// 13개 주요지역 간 지하철 연결 노선
+// ══════════════════════════════════════════
+const AREA_CONNECTIONS = [
+  // JR 야마노테선 — 이케부쿠로→신주쿠→하라주쿠→시부야
+  {ko:'야마노테선 (JR)', color:'#9ACD32', weight:6.5, coords:[
+    [35.7295,139.7109],[35.7212,139.7063],[35.7133,139.7037],
+    [35.6896,139.7006],[35.6830,139.7020],[35.6654,139.7026],[35.6580,139.7016]]},
+  // JR 야마노테선 — 이케부쿠로→우에노→아키하바라→도쿄
+  {ko:'야마노테선 (JR)', color:'#9ACD32', weight:6.5, coords:[
+    [35.7295,139.7109],[35.7330,139.7393],
+    [35.7141,139.7774],[35.7070,139.7740],[35.6983,139.7732],[35.6812,139.7671]]},
+  // JR 주오선 — 신주쿠→아키하바라→도쿄
+  {ko:'주오선 (JR)', color:'#F15A22', weight:5.5, coords:[
+    [35.6896,139.7006],[35.6872,139.7292],[35.6996,139.7663],
+    [35.6983,139.7732],[35.6812,139.7671]]},
+  // 긴자선 — 시부야→긴자→우에노→아사쿠사
+  {ko:'긴자선 (도쿄 메트로)', color:'#FF9500', weight:5.5, coords:[
+    [35.6580,139.7016],[35.6644,139.7132],[35.6758,139.7336],
+    [35.6664,139.7489],[35.6717,139.7649],
+    [35.7021,139.7732],[35.7141,139.7774],[35.7118,139.7968]]},
+  // 한조몬선 — 시부야→도쿄→스카이트리
+  {ko:'한조몬선 (도쿄 메트로)', color:'#8F76D6', weight:5, coords:[
+    [35.6580,139.7016],[35.6700,139.7209],[35.6792,139.7482],
+    [35.6812,139.7671],[35.6983,139.7732],[35.7101,139.8107]]},
+  // 히비야선 — 롯폰기→긴자→우에노
+  {ko:'히비야선 (도쿄 메트로)', color:'#9C9C9C', weight:5, coords:[
+    [35.6629,139.7317],[35.6677,139.7449],[35.6741,139.7587],
+    [35.6717,139.7649],[35.7070,139.7740],[35.7141,139.7774]]},
+  // 오에도선 — 신주쿠→롯폰기
+  {ko:'오에도선 (도에이)', color:'#B6007A', weight:5, coords:[
+    [35.6896,139.7006],[35.6940,139.6939],[35.6750,139.6900],[35.6629,139.7317]]},
+  // 케이오선 — 시모키타자와→신주쿠
+  {ko:'케이오선', color:'#2E75B6', weight:5, coords:[
+    [35.6613,139.6681],[35.6760,139.6810],[35.6896,139.7006]]},
+  // 케이오 이노카시라선 — 시모키타자와→시부야
+  {ko:'케이오 이노카시라선', color:'#5BAB3C', weight:5, coords:[
+    [35.6613,139.6681],[35.6580,139.7016]]},
+  // 유리카모메 — 도쿄(신바시)→오다이바
+  {ko:'유리카모메', color:'#00AACC', weight:4.5, coords:[
+    [35.6812,139.7671],[35.6659,139.7577],[35.6440,139.7615],[35.6267,139.7752]]},
+  // 토부 스카이트리선 — 아사쿠사→스카이트리
+  {ko:'토부 스카이트리선', color:'#1B5FAB', weight:5, coords:[
+    [35.7148,139.7967],[35.7101,139.8107]]},
+];
+
+// ══════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════
+const THRESH = [4000,8000,14000,22000,35000];
+const COLORS = ['#2ecc71','#27ae60','#f1c40f','#e67e22','#e74c3c','#8e44ad'];
+
+let currentLang = 'ko';
+let currentType = 'capsule';
+let currentCurrency = 'KRW';
+
+const EX = {JPY:1, KRW:9.5, USD:0.0067};
+const SYM = {JPY:'¥', KRW:'₩', USD:'$'};
+
+function fmt(jpy){
+  const v = Math.round(jpy * EX[currentCurrency]);
+  const s = SYM[currentCurrency];
+  if(currentCurrency==='JPY') return s+v.toLocaleString();
+  if(currentCurrency==='KRW') return s+v.toLocaleString();
+  return s+(v).toLocaleString();
+}
+
+function getColor(price){
+  for(let i=0;i<THRESH.length;i++) if(price<THRESH[i]) return COLORS[i];
+  return COLORS[5];
+}
+
+// ══════════════════════════════════════════
+// 숙박 유형별 가격 범위 (JPY 기준)
+// ══════════════════════════════════════════
+const TYPE_RANGES_JPY = {
+  capsule:  [2500,  6000],
+  hostel:   [2500,  8500],
+  budget:   [8000,  18000],
+  standard: [15000, 35000],
+  premium:  [30000, 80000],
+  luxury:   [60000, null],   // null = "+"
+};
+
+function fmtRangeVal(jpy){
+  const v = jpy * EX[currentCurrency];
+  if(currentCurrency === 'JPY') return SYM.JPY + Math.round(v).toLocaleString();
+  if(currentCurrency === 'KRW'){
+    // 1k 단위 축약: 23750 → ₩24k
+    return SYM.KRW + Math.round(v/1000).toLocaleString() + 'k';
+  }
+  // USD: 소수 없이 정수
+  return SYM.USD + Math.round(v).toLocaleString();
+}
+
+function updateTypeRanges(){
+  Object.entries(TYPE_RANGES_JPY).forEach(([type,[min,max]])=>{
+    const el = document.getElementById('tr-'+type);
+    if(!el) return;
+    el.textContent = max === null
+      ? fmtRangeVal(min) + '+'
+      : fmtRangeVal(min) + '~' + fmtRangeVal(max);
+  });
+}
+
+// ══════════════════════════════════════════
+// MAP INIT
+// ══════════════════════════════════════════
+const map = L.map('map',{center:[35.6900,139.7500],zoom:12,zoomControl:true});
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{
+  attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+  subdomains:'abcd', maxZoom:19
+}).addTo(map);
+
+const subwayLayer    = L.layerGroup().addTo(map); // ① 노선 연결선 (최하단)
+const circles        = L.layerGroup().addTo(map); // ② 지역 원 표시
+const connectorLayer = L.layerGroup().addTo(map); // ③ 화살표 연결선 + 닷
+const markers        = L.layerGroup().addTo(map); // ④ 아이콘 마커
+const labelLayer     = L.layerGroup().addTo(map); // ⑤ 라벨 카드 (최상단)
+const baseCircles    = {};
+
+// ══════════════════════════════════════════
+// MARKER ICON  (Material Symbols, 52px)
+// ══════════════════════════════════════════
+function makeIcon(area, color){
+  const html = `
+    <div style="
+      width:52px;height:52px;border-radius:50%;
+      background:${color};border:3px solid #fff;
+      box-shadow:0 3px 14px rgba(0,0,0,.28);
+      display:flex;align-items:center;justify-content:center;
+      position:relative;cursor:pointer;">
+      <span class="material-symbols-outlined" style="font-size:26px;color:#fff;">directions_subway</span>
+      ${area.rec?`<div style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;background:#f39c12;border-radius:50%;border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;font-weight:900;">★</div>`:''}
+    </div>`;
+  return L.divIcon({html, className:'', iconSize:[52,52], iconAnchor:[26,26], popupAnchor:[0,-30]});
+}
+
+// ══════════════════════════════════════════
+// AREA LABEL (name tag on map)
+// ══════════════════════════════════════════
+const LABEL_AREAS = ['shinjuku','shibuya','ikebukuro','ueno','akihabara','ginza','roppongi','asakusa','harajuku','tokyo','skytree','odaiba','shimokitazawa'];
+
+function hoverArea(id){
+  const bc = baseCircles[id];
+  const c  = AREA_COLORS[id] || '#e74c3c';
+  if(bc) bc.setStyle({fillOpacity:.62, opacity:1, weight:3.5, color:c, fillColor:c});
+}
+function unhoverArea(id){
+  const bc = baseCircles[id];
+  const c  = AREA_COLORS[id] || '#e74c3c';
+  if(bc) bc.setStyle({fillOpacity:.28, opacity:.82, weight:2.5, color:c, fillColor:c});
+}
+
+function makeAreaLabel(area, dir){
+  const meta   = AREA_META[area.id] || {};
+  const aColor = AREA_COLORS[area.id] || '#e74c3c';
+  const name   = area[currentLang] || area.ko;
+  const tag    = currentLang==='ko'?meta.tagKo : currentLang==='en'?meta.tagEn : meta.tagJa;
+  const iconList = (meta.icons || [area.icon]).slice(0, 2);
+  const iconsHtml = iconList.map(ic=>
+    `<span class="material-symbols-outlined" style="color:${aColor};">${ic}</span>`
+  ).join('');
+  // dir에 따라 앵커(labelPos)가 박스의 어느 엣지에 오는지 결정
+  const tfmMap = {
+    n:  'translateX(-50%) translateY(-100%)', // 앵커=하단중앙, 박스↑
+    s:  'translateX(-50%)',                   // 앵커=상단중앙, 박스↓
+    e:  'translateY(-50%)',                   // 앵커=좌측중앙, 박스→
+    w:  'translateX(-100%) translateY(-50%)', // 앵커=우측중앙, 박스←
+    ne: 'translateY(-100%)',                  // 앵커=좌하단,   박스↗
+    nw: 'translateX(-100%) translateY(-100%)',// 앵커=우하단,   박스↖
+    se: '',                                   // 앵커=좌상단,   박스↘
+    sw: 'translateX(-100%)',                  // 앵커=우상단,   박스↙
+  };
+  const tfm = tfmMap[dir] || tfmMap.s;
+  const html = `
+    <div style="position:relative;width:0;height:0;">
+      <div class="area-label"
+        style="position:absolute;transform:${tfm};border-color:transparent;"
+        onmouseenter="this.style.borderColor='${aColor}';this.style.background='rgba(255,255,255,.98)';hoverArea('${area.id}');"
+        onmouseleave="this.style.borderColor='transparent';this.style.background='rgba(255,255,255,.95)';unhoverArea('${area.id}');">
+        <div class="al-icons">${iconsHtml}</div>
+        <div class="al-name">${name}</div>
+        ${tag?`<div class="al-tagline">${tag}</div>`:''}
+      </div>
+    </div>`;
+  return L.divIcon({html, className:'', iconSize:[0,0], iconAnchor:[0,0]});
+}
+
+// ══════════════════════════════════════════
+// POPUP
+// ══════════════════════════════════════════
+function makePopup(area){
+  const t = TR[currentLang];
+  const price = area.prices[currentType];
+  const color = getColor(price);
+  const name = area[currentLang] || area.ko;
+  const spots = (currentLang==='ko'?area.sKo:currentLang==='en'?area.sEn:area.sJa)||[];
+  const tags = spots.map(s=>`<span class="pu-tag">${s}</span>`).join('');
+  const rows = Object.entries(area.prices).map(([k,v])=>{
+    const active = k===currentType?'pu-active':'';
+    const icon = {capsule:'bedroom_parent',hostel:'backpack',budget:'apartment',standard:'hotel',premium:'star',luxury:'diamond'}[k];
+    return `<div class="pu-row ${active}">
+      <span class="pu-label"><span class="material-symbols-outlined" style="font-size:15px;">${icon}</span>${t.types[k]}</span>
+      <span class="pu-val">${fmt(v)}<span class="pu-night">${t.perNight}</span></span>
+    </div>`;
+  }).join('');
+  const q = encodeURIComponent(name+' hotel Tokyo');
+  return `<div class="pu-wrap">
+    <div class="pu-head">
+      <div class="pu-picto" style="background:${color};">
+        <span class="material-symbols-outlined">${area.icon}</span>
+      </div>
+      <div>
+        <div class="pu-name">${name}${area.rec?`<span class="pu-badge">${t.rec}</span>`:''}</div>
+        <div class="pu-sub">${t.avgPrice}</div>
+      </div>
+    </div>
+    <div class="pu-tags">${tags}</div>
+    <div class="pu-table">${rows}</div>
+    <div class="pu-btns">
+      <a class="pu-btn pu-google" href="https://www.google.com/maps/search/${q}" target="_blank">
+        <span class="material-symbols-outlined" style="font-size:14px;">map</span>Google Maps
+      </a>
+      <a class="pu-btn pu-booking" href="https://www.booking.com/searchresults.html?ss=${q}" target="_blank">
+        <span class="material-symbols-outlined" style="font-size:14px;">hotel</span>Booking
+      </a>
+    </div>
+  </div>`;
+}
+
+// ══════════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════════
+function renderMap(){
+  circles.clearLayers();
+  connectorLayer.clearLayers();
+  markers.clearLayers();
+  labelLayer.clearLayers();
+  Object.keys(baseCircles).forEach(k=>delete baseCircles[k]);
+
+  AREAS.forEach(area=>{
+    if(!LABEL_AREAS.includes(area.id)) return;
+    const priceColor = getColor(area.prices[currentType]);
+    const aColor     = AREA_COLORS[area.id] || priceColor;
+
+    // ① 지역 원 (고정 반경 500m, 지역 고유 색)
+    const bc = L.circle(area.coords,{
+      radius:500, color:aColor, fillColor:aColor,
+      fillOpacity:.28, weight:3, opacity:.9
+    }).bindPopup(()=>makePopup(area),{maxWidth:320,minWidth:280}).addTo(circles);
+    baseCircles[area.id] = bc;
+
+    // ② 아이콘 마커 (가격 색상)
+    L.marker(area.coords,{icon:makeIcon(area,priceColor)})
+      .bindPopup(()=>makePopup(area),{maxWidth:320,minWidth:280})
+      .addTo(markers);
+
+    // ③ 라벨 오프셋 위치 & 방향
+    const lo       = LABEL_OFFSETS[area.id] || { off:[0.022,0], dir:'n' };
+    const labelPos = [area.coords[0]+lo.off[0], area.coords[1]+lo.off[1]];
+
+    // ④ 연결선 (원 중심 → 라벨) — 드래그 시 업데이트용으로 참조 보관
+    const connector = L.polyline([area.coords, labelPos],{
+      color:aColor, weight:2, opacity:.8, dashArray:'5 4'
+    }).addTo(connectorLayer);
+
+    // ⑤ 중심 닷 (원 안 핀 역할)
+    L.circleMarker(area.coords,{
+      radius:6, color:'#fff', weight:2.5, fillColor:aColor, fillOpacity:1
+    }).addTo(connectorLayer);
+
+    // ⑥ 라벨 카드 (드래그 가능)
+    const lblMarker = L.marker(labelPos,{
+      icon:makeAreaLabel(area, lo.dir),
+      zIndexOffset:300,
+      draggable:true
+    }).addTo(labelLayer);
+
+    // 드래그 시 연결선 실시간 업데이트
+    lblMarker.on('drag', function(e){
+      connector.setLatLngs([area.coords, e.target.getLatLng()]);
+    });
+  });
+
+  // ══ SVG pane vs Marker pane 오프셋 보정 (C) ══
+  const _svgEl  = document.querySelector('svg.leaflet-zoom-animated');
+  const _mapEl  = map.getContainer();
+  const _sr = _svgEl ? _svgEl.getBoundingClientRect() : {left:0,top:0};
+  const _mr = _mapEl.getBoundingClientRect();
+  const _cx = Math.round(_mr.left - _sr.left);   // ~93
+  const _cy = Math.round(_mr.top  - _sr.top);    // ~97
+
+  // ══ 디즈니랜드 특별 마커 ══
+  const disneyCoords  = [35.6329, 139.8804];
+  const disneyColor   = '#E91E8C';
+  const disneyName    = currentLang==='en' ? 'Tokyo Disneyland' : currentLang==='ja' ? '東京ディズニーランド' : '디즈니랜드';
+  const disneyTagline = currentLang==='en' ? 'Disney Resort ✨ Urayasu'
+                      : currentLang==='ja' ? 'ディズニーリゾート ✨ 浦安'
+                      : '디즈니리조트 ✨ 우라야스';
+
+  // 오다이바→디즈니랜드 점선 연결 (드래그로 갱신)
+  const disneyConnector = L.polyline([[35.6267,139.7752], disneyCoords],{
+    color:disneyColor, weight:2, opacity:.55, dashArray:'5 4'
+  }).addTo(connectorLayer);
+
+  // 역 스타일 원형 마커
+  L.circleMarker(disneyCoords,{
+    radius:16, color:'#fff', weight:3, fillColor:disneyColor, fillOpacity:1
+  }).addTo(connectorLayer);
+  L.circleMarker(disneyCoords,{
+    radius:6, color:'#fff', weight:2.5, fillColor:disneyColor, fillOpacity:1
+  }).addTo(connectorLayer);
+
+  // 디즈니랜드 라벨 — 작은 크기, Pacifico 폰트, 드래그 가능
+  const disneyHtml = `
+    <div style="position:relative;width:0;height:0;">
+      <div class="disney-label" style="position:absolute;transform:translateX(-100%) translateY(-50%);"
+           onmouseenter="this.style.borderColor='${disneyColor}';"
+           onmouseleave="this.style.borderColor='transparent';">
+        <div class="dl-icons">
+          <span class="material-symbols-outlined" style="color:${disneyColor};">castle</span>
+          <span class="material-symbols-outlined" style="color:${disneyColor};">celebration</span>
+          <span class="material-symbols-outlined" style="color:#FFD700;">star</span>
+        </div>
+        <div class="dl-name" style="color:${disneyColor};">${disneyName}</div>
+        <div class="dl-tag">${disneyTagline}</div>
+      </div>
+    </div>`;
+  const disneyMarker = L.marker(disneyCoords,{
+    icon: L.divIcon({html:disneyHtml, className:'', iconSize:[0,0], iconAnchor:[_cx, _cy]}),
+    zIndexOffset:400,
+    draggable:true
+  }).addTo(labelLayer);
+
+  disneyMarker.on('drag', function(e){
+    disneyConnector.setLatLngs([[35.6267,139.7752], e.target.getLatLng()]);
+  });
+}
+
+// ══════════════════════════════════════════
+// 노선 연결선 렌더
+// ══════════════════════════════════════════
+function renderConnections(){
+  subwayLayer.clearLayers();
+  AREA_CONNECTIONS.forEach(line=>{
+    // 외곽 흰 선 (가독성)
+    L.polyline(line.coords,{
+      color:'#fff', weight:line.weight+3,
+      opacity:.55, lineJoin:'round', lineCap:'round'
+    }).addTo(subwayLayer);
+    // 본 노선 색상
+    L.polyline(line.coords,{
+      color:line.color, weight:line.weight,
+      opacity:.9, lineJoin:'round', lineCap:'round'
+    }).bindTooltip(line.ko,{
+      sticky:true, direction:'top', className:'subway-tip', offset:[0,-4]
+    }).addTo(subwayLayer);
+  });
+}
+
+// ══════════════════════════════════════════
+// APPLY LANGUAGE
+// ══════════════════════════════════════════
+function applyLang(){
+  const t = TR[currentLang];
+  document.getElementById('h-title').textContent = t.title;
+  document.getElementById('h-sub').textContent = t.sub;
+  document.getElementById('h-hint').innerHTML = t.hint.replace('/','/<br>');
+  document.getElementById('sec-type').textContent = t.secType;
+  document.getElementById('sec-legend').textContent = t.secLegend;
+  document.getElementById('sec-notes').textContent = t.secNotes;
+  document.getElementById('sec-subway').textContent = t.secSubway;
+  Object.keys(t.types).forEach(k=>{
+    const el = document.getElementById('tn-'+k);
+    if(el) el.textContent = t.types[k];
+  });
+  t.legLabels.forEach((lbl,i)=>{ const el=document.getElementById('ll'+i); if(el) el.textContent=lbl; });
+  t.legColors.forEach((lbl,i)=>{ const el=document.getElementById('lc'+i); if(el) el.textContent=lbl; });
+  t.notes.forEach((note,i)=>{ const el=document.getElementById('nt'+i); if(el) el.textContent=note; });
+  document.getElementById('area-count').textContent = AREAS.length + t.unit;
+  document.documentElement.lang = currentLang;
+}
+
+// ══════════════════════════════════════════
+// CONTROLS
+// ══════════════════════════════════════════
+function setLang(lang){
+  currentLang = lang;
+  ['ko','en','ja'].forEach(l=>{
+    document.getElementById('lang-'+l).classList.toggle('active', l===lang);
+  });
+  applyLang();
+  renderMap();
+}
+
+function setType(type){
+  currentType = type;
+  document.querySelectorAll('.type-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+type).classList.add('active');
+  renderMap();
+}
+
+function setCur(cur){
+  currentCurrency = cur;
+  ['JPY','KRW','USD'].forEach(c=>{
+    document.getElementById('btn-'+c.toLowerCase()).classList.toggle('active', c===cur);
+  });
+  updateTypeRanges();
+  renderMap();
+}
+
+// ══════════════════════════════════════════
+// SUBWAY LINE LIST in sidebar
+// ══════════════════════════════════════════
+function renderSubwayList(){
+  const seen = new Set();
+  const unique = AREA_CONNECTIONS.filter(l=>{
+    if(seen.has(l.ko)) return false;
+    seen.add(l.ko); return true;
+  });
+  document.getElementById('subway-list').innerHTML = unique.map(l=>{
+    const m = l.ko.match(/^(.+?)(?:\s*\((.+?)\))?$/);
+    const name = m[1], org = m[2]||'';
+    return `<div class="sl-item">
+      <div class="sl-swatch" style="background:${l.color}"></div>
+      <div class="sl-name">${name}${org?`<span class="sl-org">${org}</span>`:''}</div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+applyLang();
+updateTypeRanges();  // 숙박 유형 가격 범위 (통화 기준)
+renderSubwayList();  // 사이드바 노선 목록
+renderConnections(); // 지역 간 노선 연결 (정적, 즉시)
+renderMap();         // 지역 원 + 라벨 + 화살표
+</script>
+</body>
+</html>
