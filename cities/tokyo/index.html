@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>도쿄 숙박 가격 지도 | Tokyo Accommodation Map</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,1,0"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap"/>
+<link rel="stylesheet" href="../../shared/design-system.css"/>
+<link rel="stylesheet" href="../../shared/city-map.css"/>
+<link rel="stylesheet" href="../../shared/city-features.css"/>
+<style>
+/* ── PAGE TOKENS ── */
+:root { --accent: #f97316; }
+
+/* ── DISNEY LABEL ── */
+.disney-label {
+  background:linear-gradient(135deg,rgba(28,8,38,.92) 0%,rgba(38,8,32,.92) 100%);
+  border:1.5px solid rgba(233,30,140,.2);
+  border-radius:12px;
+  padding:5px 10px;
+  white-space:nowrap; cursor:grab;
+  transition:all 200ms var(--ease);
+  box-shadow:0 3px 14px rgba(233,30,140,.28), 0 0 0 1px rgba(233,30,140,.12);
+  backdrop-filter:blur(8px);
+  pointer-events:auto; text-align:center; user-select:none;
+}
+.disney-label:active { cursor:grabbing }
+.disney-label:hover {
+  transform:scale(1.08);
+  box-shadow:0 8px 24px rgba(233,30,140,.45);
+}
+.dl-icons { display:flex; gap:4px; justify-content:center; margin-bottom:2px }
+.dl-icons .material-symbols-outlined { font-size:17px }
+.dl-name {
+  font-family:'Pacifico',cursive;
+  font-size:13px; font-weight:400; line-height:1.15;
+}
+.dl-tag {
+  font-size:8px; color:rgba(255,140,210,.65);
+  margin-top:2px; font-family:var(--font);
+  letter-spacing:.01em; line-height:1.3;
+}
+
+/* ── MOBILE ── */
+@media(max-width:768px) {
+  .main       { flex-direction:column-reverse }
+  .sidebar    { width:100%!important; opacity:1!important; max-height:42vh; border-right:none; border-top:1px solid var(--border); pointer-events:auto!important }
+  #map        { flex:1; min-height:58vh }
+  .h-sub, .h-hint { display:none }
+  .sb-toggle  { display:none }
+}
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<header>
+  <a class="h-back" href="../../index.html">
+    <span class="material-symbols-outlined">arrow_back</span>
+    도시 목록
+  </a>
+  <div class="h-divider"></div>
+  <div class="h-city">
+    <span class="h-logo">🗼</span>
+    <div>
+      <div class="h-title" id="h-title">도쿄 숙박 가격 지도</div>
+      <div class="h-sub"   id="h-sub">위치별 평균 숙박 요금 · Booking.com 기준</div>
+    </div>
+  </div>
+  <div class="h-divider"></div>
+  <div class="h-hint" id="h-hint">지역 클릭 → 상세 가격 확인 &nbsp;/&nbsp; ★ = 추천</div>
+  <div class="h-controls">
+    <div class="toggle-group">
+      <button class="tg-btn active" id="lang-ko" onclick="setLang('ko')">한국어</button>
+      <button class="tg-btn"        id="lang-en" onclick="setLang('en')">EN</button>
+      <button class="tg-btn"        id="lang-ja" onclick="setLang('ja')">日本語</button>
+    </div>
+    <div class="toggle-group">
+      <button class="tg-btn"        id="btn-jpy" onclick="setCur('JPY')">¥ JPY</button>
+      <button class="tg-btn active" id="btn-krw" onclick="setCur('KRW')">₩ KRW</button>
+      <button class="tg-btn"        id="btn-usd" onclick="setCur('USD')">$ USD</button>
+    </div>
+    <button class="planner-btn" onclick="openPlanner()">
+      <span class="material-symbols-outlined">explore</span>
+      <span id="planner-btn-label">여행 플래너</span>
+    </button>
+  </div>
+</header>
+
+<div class="main">
+  <!-- Sidebar toggle button -->
+  <button class="sb-toggle" id="sb-toggle" onclick="toggleSidebar()" title="사이드바 접기">‹</button>
+
+  <!-- ── SIDEBAR ── -->
+  <div class="sidebar" id="sidebar">
+
+    <!-- 숙박 유형 -->
+    <div class="sec">
+      <div class="sec-title">
+        <span id="sec-type">숙박 유형 선택</span>
+        <span class="area-count" id="area-count">35개 지역</span>
+      </div>
+      <div class="type-grid">
+        <button class="type-btn active" onclick="setType('capsule')" id="tab-capsule">
+          <div class="t-picto"><span class="material-symbols-outlined">bedroom_parent</span></div>
+          <span class="t-name"  id="tn-capsule">캡슐호텔</span>
+          <span class="t-range" id="tr-capsule"></span>
+        </button>
+        <button class="type-btn" onclick="setType('hostel')" id="tab-hostel">
+          <div class="t-picto"><span class="material-symbols-outlined">backpack</span></div>
+          <span class="t-name"  id="tn-hostel">호스텔/게하</span>
+          <span class="t-range" id="tr-hostel"></span>
+        </button>
+        <button class="type-btn" onclick="setType('budget')" id="tab-budget">
+          <div class="t-picto"><span class="material-symbols-outlined">apartment</span></div>
+          <span class="t-name"  id="tn-budget">비즈니스 ★★</span>
+          <span class="t-range" id="tr-budget"></span>
+        </button>
+        <button class="type-btn" onclick="setType('standard')" id="tab-standard">
+          <div class="t-picto"><span class="material-symbols-outlined">hotel</span></div>
+          <span class="t-name"  id="tn-standard">스탠다드 ★★★</span>
+          <span class="t-range" id="tr-standard"></span>
+        </button>
+        <button class="type-btn" onclick="setType('premium')" id="tab-premium">
+          <div class="t-picto"><span class="material-symbols-outlined">star</span></div>
+          <span class="t-name"  id="tn-premium">프리미엄 ★★★★</span>
+          <span class="t-range" id="tr-premium"></span>
+        </button>
+        <button class="type-btn" onclick="setType('luxury')" id="tab-luxury">
+          <div class="t-picto"><span class="material-symbols-outlined">diamond</span></div>
+          <span class="t-name"  id="tn-luxury">럭셔리 ★★★★★</span>
+          <span class="t-range" id="tr-luxury"></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 가격 범례 -->
+    <div class="sec">
+      <div class="sec-title" id="sec-legend">가격 색상 기준</div>
+      <div class="leg-bar"></div>
+      <div class="leg-labels">
+        <span id="ll0">저렴</span><span id="ll1">보통</span>
+        <span id="ll2">비쌈</span><span id="ll3">고급</span>
+      </div>
+      <div class="leg-items">
+        <div class="leg-row"><div class="leg-dot" style="background:#22c55e"></div><span id="lc0">매우 저렴</span></div>
+        <div class="leg-row"><div class="leg-dot" style="background:#84cc16"></div><span id="lc1">저렴</span></div>
+        <div class="leg-row"><div class="leg-dot" style="background:#eab308"></div><span id="lc2">보통</span></div>
+        <div class="leg-row"><div class="leg-dot" style="background:#f97316"></div><span id="lc3">약간 비쌈</span></div>
+        <div class="leg-row"><div class="leg-dot" style="background:#ef4444"></div><span id="lc4">비쌈</span></div>
+        <div class="leg-row"><div class="leg-dot" style="background:#a855f7"></div><span id="lc5">럭셔리</span></div>
+      </div>
+    </div>
+
+    <!-- 안내 -->
+    <div class="sec">
+      <div class="sec-title" id="sec-notes">안내사항</div>
+      <ul class="notes">
+        <li id="nt0">절대적인 수치 아님 (참고용)</li>
+        <li id="nt1">Booking.com 평균가 기준</li>
+        <li id="nt2">성수기·이벤트 시 변동 큼</li>
+        <li id="nt3">별(★)은 추천 숙박 위치</li>
+        <li id="nt4">최종 업데이트 2024/08</li>
+      </ul>
+    </div>
+
+    <!-- 지하철 노선 (접힘) -->
+    <div class="sec">
+      <div class="sec-title">
+        <span id="sec-subway">🚇 지하철 노선</span>
+        <button class="sec-toggle-btn" id="subway-toggle-btn" onclick="toggleSubway()">펼치기</button>
+      </div>
+      <div id="subway-list" class="subway-body"></div>
+    </div>
+
+    <!-- 동반자 유형 -->
+    <div class="sec">
+      <div class="sec-title" id="sec-companion">동반자</div>
+      <div class="comp-grid">
+        <button class="comp-btn active" id="comp-solo"    onclick="setCompanion('solo')">   <span class="comp-emoji">🧳</span><span class="comp-label" id="cl-solo">혼자</span></button>
+        <button class="comp-btn"        id="comp-couple"  onclick="setCompanion('couple')"> <span class="comp-emoji">💑</span><span class="comp-label" id="cl-couple">커플</span></button>
+        <button class="comp-btn"        id="comp-friends" onclick="setCompanion('friends')"><span class="comp-emoji">👫</span><span class="comp-label" id="cl-friends">친구</span></button>
+        <button class="comp-btn"        id="comp-family"  onclick="setCompanion('family')"> <span class="comp-emoji">👨‍👩‍👧</span><span class="comp-label" id="cl-family">가족</span></button>
+      </div>
+    </div>
+
+    <!-- 지도 표시 -->
+    <div class="sec">
+      <div class="sec-title" id="sec-overlay">지도 표시</div>
+      <div class="ovl-grid">
+        <button class="ovl-btn" id="ovl-attr"    onclick="toggleAttractions()"><span class="ovl-pip"></span><span id="ovl-attr-lbl">🏛️ 관광지</span></button>
+        <button class="ovl-btn" id="ovl-airport" onclick="toggleAirports()">  <span class="ovl-pip"></span><span id="ovl-ap-lbl">✈️ 공항</span></button>
+      </div>
+    </div>
+
+  </div><!-- /sidebar -->
+
+  <div id="map"></div>
+</div><!-- /main -->
+
+<!-- ── PLANNER MODAL ── -->
+<div id="planner-overlay" class="planner-overlay" onclick="if(event.target===this)closePlanner()">
+  <div class="planner-panel">
+    <div class="pn-head">
+      <div class="pn-head-title">🗓️ <span id="pn-title">여행 일정 플래너</span></div>
+      <button class="pn-close" onclick="closePlanner()">✕</button>
+    </div>
+    <div class="pn-body">
+      <div class="pn-section">
+        <div class="pn-sec-label" id="pn-lbl-nights">여행 기간</div>
+        <div class="nights-row">
+          <div class="nights-stepper">
+            <button class="ns-btn" onclick="changeNights(-1)">−</button>
+            <div class="ns-val" id="nights-val">3</div>
+            <button class="ns-btn" onclick="changeNights(1)">+</button>
+          </div>
+          <span class="nights-suffix" id="nights-suffix">박</span>
+        </div>
+      </div>
+      <div class="pn-section">
+        <div class="pn-sec-label" id="pn-lbl-types">여행 유형 <small style="text-transform:none;letter-spacing:0;font-weight:500">(최대 3개)</small></div>
+        <div class="types-sel-grid" id="types-sel-grid"></div>
+        <div class="types-hint" id="types-hint">0 / 3 선택됨</div>
+      </div>
+      <div class="pn-section">
+        <div class="pn-sec-label" id="pn-lbl-budget">총 예산 (항공 제외)</div>
+        <div class="budget-row">
+          <input type="number" class="budget-input" id="budget-input" placeholder="예: 50" min="1" step="10">
+          <span class="budget-suffix" id="budget-suffix">만원</span>
+        </div>
+      </div>
+      <button class="pn-gen-btn" onclick="generateAndRender()">
+        <span class="material-symbols-outlined">route</span>
+        <span id="pn-gen-label">추천 동선 생성</span>
+      </button>
+      <div class="pn-result" id="pn-result" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ══════════════════════════════════════════
+// TRANSLATIONS
+// ══════════════════════════════════════════
+const TR = {
+  ko:{
+    title:'도쿄 숙박 가격 지도', sub:'위치별 평균 숙박 요금 · Booking.com 기준',
+    hint:'지역 클릭 → 상세 가격 확인 / ★ = 추천',
+    secType:'숙박 유형 선택', secLegend:'가격 색상 기준', secNotes:'안내사항', secSubway:'🚇 지하철 노선',
+    types:{capsule:'캡슐호텔',hostel:'호스텔/게하',budget:'비즈니스 ★★',standard:'스탠다드 ★★★',premium:'프리미엄 ★★★★',luxury:'럭셔리 ★★★★★'},
+    legLabels:['저렴','보통','비쌈','고급'],
+    legColors:['매우 저렴','저렴','보통','약간 비쌈','비쌈','럭셔리'],
+    notes:['절대적인 수치 아님 (참고용)','Booking.com 평균가 기준','성수기·이벤트 시 변동 큼','별(★)은 추천 숙박 위치','최종 업데이트 2024/08'],
+    rec:'추천', perNight:'/박', avgPrice:'평균 숙박 가격 (1박 · 2인 기준)', unit:'개 지역',
+    expand:'펼치기', collapse:'접기', backBtn:'도시 목록',
+  },
+  en:{
+    title:'Tokyo Accommodation Map', sub:'Average room rates by area · Based on Booking.com',
+    hint:'Click area → See prices / ★ = Recommended',
+    secType:'Accommodation Type', secLegend:'Price Color Guide', secNotes:'Notes', secSubway:'🚇 Subway Lines',
+    types:{capsule:'Capsule Hotel',hostel:'Hostel/Guesthouse',budget:'Business ★★',standard:'Standard ★★★',premium:'Premium ★★★★',luxury:'Luxury ★★★★★'},
+    legLabels:['Cheap','Mid','Exp','Luxury'],
+    legColors:['Very Cheap','Cheap','Moderate','Slightly Exp.','Expensive','Luxury'],
+    notes:['Approximate figures only','Based on Booking.com averages','Prices vary by season/events','★ = Recommended area','Last updated 2024/08'],
+    rec:'Rec', perNight:'/night', avgPrice:'Avg. price per night (2 guests)', unit:' areas',
+    expand:'Show', collapse:'Hide', backBtn:'City List',
+  },
+  ja:{
+    title:'東京宿泊価格マップ', sub:'エリア別平均宿泊料金 · Booking.com基準',
+    hint:'エリアをクリック → 詳細価格 / ★ = おすすめ',
+    secType:'宿泊タイプ', secLegend:'価格カラー基準', secNotes:'注意事項', secSubway:'🚇 地下鉄路線',
+    types:{capsule:'カプセルホテル',hostel:'ホステル',budget:'ビジネス ★★',standard:'スタンダード ★★★',premium:'プレミアム ★★★★',luxury:'ラグジュアリー ★★★★★'},
+    legLabels:['安い','普通','高い','高級'],
+    legColors:['格安','安い','普通','やや高い','高い','高級'],
+    notes:['参考値のみ','Booking.com平均価格基準','シーズンにより変動あり','★はおすすめエリア','最終更新 2024/08'],
+    rec:'おすすめ', perNight:'/泊', avgPrice:'1泊平均価格（2名）', unit:'エリア',
+    expand:'開く', collapse:'閉じる', backBtn:'都市一覧',
+  }
+};
+
+// ══════════════════════════════════════════
+// AREA DATA
+// ══════════════════════════════════════════
+const AREAS = [
+  {id:'shinjuku',ko:'신주쿠',en:'Shinjuku',ja:'新宿',coords:[35.6896,139.7006],rec:true,icon:'location_city',
+   sKo:['신주쿠 교엔','가부키초','오모이데 요코초','도쿄 도청'],
+   sEn:['Shinjuku Gyoen','Kabukicho','Omoide Yokocho','Tokyo Metro. Govt'],
+   sJa:['新宿御苑','歌舞伎町','思い出横丁','都庁'],
+   prices:{capsule:4200,hostel:4900,budget:13000,standard:24000,premium:48000,luxury:96000},radius:700},
+
+  {id:'shibuya',ko:'시부야',en:'Shibuya',ja:'渋谷',coords:[35.6580,139.7016],rec:true,icon:'directions_walk',
+   sKo:['스크램블 교차로','하치코 동상','시부야 스카이','미야시타 파크'],
+   sEn:['Scramble Crossing','Hachiko Statue','Shibuya Sky','Miyashita Park'],
+   sJa:['スクランブル交差点','ハチ公像','渋谷スカイ','宮下パーク'],
+   prices:{capsule:4800,hostel:5500,budget:15500,standard:28000,premium:56000,luxury:115000},radius:660},
+
+  {id:'ikebukuro',ko:'이케부쿠로',en:'Ikebukuro',ja:'池袋',coords:[35.7295,139.7109],rec:true,icon:'shopping_bag',
+   sKo:['선샤인시티','선샤인 수족관','웨스트 게이트 파크'],
+   sEn:['Sunshine City','Sunshine Aquarium','West Gate Park'],
+   sJa:['サンシャインシティ','サンシャイン水族館','西口公園'],
+   prices:{capsule:3700,hostel:4200,budget:11500,standard:21000,premium:42000,luxury:83000},radius:680},
+
+  {id:'ueno',ko:'우에노',en:'Ueno',ja:'上野',coords:[35.7141,139.7774],rec:true,icon:'park',
+   sKo:['우에노 공원','도쿄 국립박물관','아메요코 시장','우에노 동물원'],
+   sEn:['Ueno Park','Tokyo National Museum','Ameyoko Market','Ueno Zoo'],
+   sJa:['上野公園','東京国立博物館','アメ横','上野動物園'],
+   prices:{capsule:3200,hostel:3900,budget:10000,standard:18000,premium:35000,luxury:68000},radius:620},
+
+  {id:'akihabara',ko:'아키하바라',en:'Akihabara',ja:'秋葉原',coords:[35.6983,139.7732],rec:false,icon:'sports_esports',
+   sKo:['전자상가','아니메 숍','메이드 카페','라디오 회관'],
+   sEn:['Electronics District','Anime Shops','Maid Café','Radio Kaikan'],
+   sJa:['電気街','アニメショップ','メイドカフェ','ラジオ会館'],
+   prices:{capsule:3600,hostel:4100,budget:10500,standard:19500,premium:38000,luxury:73000},radius:520},
+
+  {id:'tokyo',ko:'도쿄역',en:'Tokyo Station',ja:'東京駅',coords:[35.6812,139.7671],rec:false,icon:'train',
+   sKo:['황거','마루노우치','도쿄 스테이션 갤러리','KITTE'],
+   sEn:['Imperial Palace','Marunouchi','Tokyo Station Gallery','KITTE'],
+   sJa:['皇居','丸の内','東京ステーションギャラリー','KITTE'],
+   prices:{capsule:5200,hostel:6200,budget:16500,standard:33000,premium:66000,luxury:145000},radius:640},
+
+  {id:'ginza',ko:'긴자',en:'Ginza',ja:'銀座',coords:[35.6695,139.7632],rec:false,icon:'diamond',
+   sKo:['긴자 쇼핑','긴자 식스','더 긴자','츠키지 시장'],
+   sEn:['Ginza Shopping','Ginza Six','The Ginza','Tsukiji Market'],
+   sJa:['銀座ショッピング','GINZA SIX','ザ・ギンザ','築地市場'],
+   prices:{capsule:6500,hostel:7200,budget:19500,standard:41000,premium:82000,luxury:185000},radius:550},
+
+  {id:'roppongi',ko:'롯폰기',en:'Roppongi',ja:'六本木',coords:[35.6629,139.7317],rec:false,icon:'palette',
+   sKo:['롯폰기 힐스','도쿄 미드타운','모리 미술관','국립 신미술관'],
+   sEn:['Roppongi Hills','Tokyo Midtown','Mori Art Museum','National Art Center'],
+   sJa:['六本木ヒルズ','東京ミッドタウン','森美術館','国立新美術館'],
+   prices:{capsule:5800,hostel:6600,budget:17500,standard:37000,premium:74000,luxury:165000},radius:560},
+
+  {id:'harajuku',ko:'하라주쿠',en:'Harajuku',ja:'原宿',coords:[35.6654,139.7026],rec:false,icon:'style',
+   sKo:['다케시타 거리','메이지 신궁','오모테산도 힐스'],
+   sEn:['Takeshita Street','Meiji Shrine','Omotesando Hills'],
+   sJa:['竹下通り','明治神宮','表参道ヒルズ'],
+   prices:{capsule:5000,hostel:5800,budget:15500,standard:30000,premium:60000,luxury:126000},radius:510},
+
+  {id:'ebisu',ko:'에비스',en:'Ebisu',ja:'恵比寿',coords:[35.6468,139.7101],rec:false,icon:'local_bar',
+   sKo:['야에비스 맥주기념관','에비스 가든플레이스','다이칸야마 T-SITE'],
+   sEn:['Yebisu Beer Museum','Yebisu Garden Place','Daikanyama T-SITE'],
+   sJa:['恵比寿ビール記念館','恵比寿ガーデンプレイス','代官山T-SITE'],
+   prices:{capsule:5400,hostel:6200,budget:17000,standard:35000,premium:70000,luxury:152000},radius:500},
+
+  {id:'meguro',ko:'메구로',en:'Meguro',ja:'目黒',coords:[35.6337,139.7158],rec:false,icon:'local_florist',
+   sKo:['나카메구로 벚꽃길','메구로 강변','기생충 박물관'],
+   sEn:['Nakameguro Cherry Blossoms','Meguro River','Parasite Museum'],
+   sJa:['中目黒の桜','目黒川','寄生虫博物館'],
+   prices:{capsule:4800,hostel:5500,budget:14000,standard:27000,premium:54000,luxury:110000},radius:480},
+
+  {id:'shinagawa',ko:'시나가와',en:'Shinagawa',ja:'品川',coords:[35.6284,139.7387],rec:false,icon:'directions_railway',
+   sKo:['시나가와 수족관','신칸센 환승역'],sEn:['Shinagawa Aquarium','Shinkansen Hub'],sJa:['しながわ水族館','新幹線乗換駅'],
+   prices:{capsule:4500,hostel:5200,budget:14000,standard:26000,premium:52000,luxury:104000},radius:550},
+
+  {id:'osaki',ko:'오사키',en:'Osaki',ja:'大崎',coords:[35.6197,139.7280],rec:false,icon:'business',
+   sKo:['소니 시티','오사키 브라이트코어'],sEn:['Sony City','Osaki Bright Core'],sJa:['ソニーシティ','大崎ブライトコア'],
+   prices:{capsule:4000,hostel:4600,budget:12000,standard:22000,premium:44000,luxury:88000},radius:450},
+
+  {id:'gotanda',ko:'고탄다',en:'Gotanda',ja:'五反田',coords:[35.6262,139.7237],rec:false,icon:'storefront',
+   sKo:['고탄다 쇼핑'],sEn:['Gotanda Shopping'],sJa:['五反田商店街'],
+   prices:{capsule:3800,hostel:4300,budget:11000,standard:20000,premium:40000,luxury:79000},radius:430},
+
+  {id:'yoyogi',ko:'요요기',en:'Yoyogi',ja:'代々木',coords:[35.6830,139.7020],rec:false,icon:'nature',
+   sKo:['요요기 공원','올림픽 기념관'],sEn:['Yoyogi Park','Olympic Memorial'],sJa:['代々木公園','オリンピック記念館'],
+   prices:{capsule:4200,hostel:4800,budget:13000,standard:24000,premium:48000,luxury:95000},radius:430},
+
+  {id:'shinokubo',ko:'신오쿠보',en:'Shin-Okubo',ja:'新大久保',coords:[35.7004,139.7004],rec:false,icon:'restaurant',
+   sKo:['코리아타운','한국 음식 거리','K-POP 숍'],sEn:['Korea Town','Korean Food Street','K-POP Shops'],sJa:['コリアンタウン','韓国料理街','K-POPショップ'],
+   prices:{capsule:3600,hostel:4200,budget:11000,standard:20000,premium:40000,luxury:79000},radius:440},
+
+  {id:'takadanobaba',ko:'타카다노바바',en:'Takadanobaba',ja:'高田馬場',coords:[35.7133,139.7037],rec:false,icon:'school',
+   sKo:['와세다 대학교','학생 거리'],sEn:['Waseda University','Student Area'],sJa:['早稲田大学','学生街'],
+   prices:{capsule:3400,hostel:3900,budget:10500,standard:19000,premium:37000,luxury:72000},radius:430},
+
+  {id:'mejiro',ko:'메지로',en:'Mejiro',ja:'目白',coords:[35.7212,139.7063],rec:false,icon:'yard',
+   sKo:['메지로 정원','가쿠슈인 대학교'],sEn:['Mejiro Garden','Gakushuin Univ.'],sJa:['目白庭園','学習院大学'],
+   prices:{capsule:3600,hostel:4100,budget:11000,standard:20000,premium:40000,luxury:77000},radius:410},
+
+  {id:'otsuka',ko:'오츠카',en:'Otsuka',ja:'大塚',coords:[35.7277,139.7285],rec:false,icon:'tram',
+   sKo:['도덴 아라카와선'],sEn:['Toden Arakawa Line'],sJa:['都電荒川線'],
+   prices:{capsule:3200,hostel:3700,budget:10000,standard:18500,premium:36000,luxury:70000},radius:400},
+
+  {id:'sugamo',ko:'스가모',en:'Sugamo',ja:'巣鴨',coords:[35.7330,139.7393],rec:false,icon:'temple_buddhist',
+   sKo:['스가모 지조 거리','도겐지 절'],sEn:["Sugamo Jizo Dori","Togenji Temple"],sJa:['巣鴨地蔵通り','東源寺'],
+   prices:{capsule:3000,hostel:3500,budget:9500,standard:17500,premium:34000,luxury:66000},radius:420},
+
+  {id:'komagome',ko:'코마고메',en:'Komagome',ja:'駒込',coords:[35.7362,139.7476],rec:false,icon:'forest',
+   sKo:['리쿠기엔 정원'],sEn:['Rikugien Garden'],sJa:['六義園'],
+   prices:{capsule:3200,hostel:3700,budget:10000,standard:18500,premium:36000,luxury:70000},radius:420},
+
+  {id:'tabata',ko:'타바타',en:'Tabata',ja:'田端',coords:[35.7381,139.7614],rec:false,icon:'cottage',
+   sKo:['타바타 문화촌','야나카 지역'],sEn:['Tabata Art Village','Yanaka Area'],sJa:['田端文士村','谷中エリア'],
+   prices:{capsule:3000,hostel:3500,budget:9500,standard:17500,premium:34000,luxury:66000},radius:400},
+
+  {id:'nippori',ko:'닛포리',en:'Nippori',ja:'日暮里',coords:[35.7281,139.7707],rec:false,icon:'content_cut',
+   sKo:['야나카 긴자','닛포리 섬유 거리'],sEn:['Yanaka Ginza','Nippori Textile Town'],sJa:['谷中銀座','日暮里繊維街'],
+   prices:{capsule:2800,hostel:3300,budget:9000,standard:16500,premium:32000,luxury:63000},radius:430},
+
+  {id:'uguisudani',ko:'우구이스다니',en:'Uguisudani',ja:'鶯谷',coords:[35.7208,139.7777],rec:false,icon:'nightlife',
+   sKo:['야나카 지역 관문'],sEn:['Gateway to Yanaka'],sJa:['谷中エリアの玄関口'],
+   prices:{capsule:2600,hostel:3000,budget:8500,standard:15500,premium:30000,luxury:58000},radius:380},
+
+  {id:'okachimachi',ko:'오카치마치',en:'Okachimachi',ja:'御徒町',coords:[35.7070,139.7740],rec:false,icon:'diamond_turn_right',
+   sKo:['아메요코 시장','주얼리 타운'],sEn:['Ameyoko Market','Jewelry Town'],sJa:['アメ横','ジュエリータウン'],
+   prices:{capsule:3000,hostel:3600,budget:9500,standard:17000,premium:33000,luxury:64000},radius:400},
+
+  {id:'kanda',ko:'칸다',en:'Kanda',ja:'神田',coords:[35.6921,139.7712],rec:false,icon:'menu_book',
+   sKo:['간다 고서점 거리','진보초'],sEn:['Kanda Bookstore St.','Jimbocho'],sJa:['神田古書店街','神保町'],
+   prices:{capsule:4000,hostel:4600,budget:11500,standard:21000,premium:42000,luxury:83000},radius:450},
+
+  {id:'yurakucho',ko:'유라쿠쵸',en:'Yurakucho',ja:'有楽町',coords:[35.6752,139.7631],rec:false,icon:'theater_comedy',
+   sKo:['도쿄 국제 포럼','히비야 공원'],sEn:['Tokyo Int\'l Forum','Hibiya Park'],sJa:['東京国際フォーラム','日比谷公園'],
+   prices:{capsule:5600,hostel:6400,budget:17500,standard:37000,premium:74000,luxury:158000},radius:480},
+
+  {id:'shimbashi',ko:'신바시',en:'Shimbashi',ja:'新橋',coords:[35.6659,139.7577],rec:false,icon:'local_bar',
+   sKo:['샐러리맨의 성지','야키토리 골목','구 신바시 역'],sEn:['Salarymen Hub','Yakitori Alley','Old Shimbashi Stn.'],sJa:['サラリーマンの聖地','焼き鳥横丁','旧新橋停車場'],
+   prices:{capsule:5000,hostel:5800,budget:15000,standard:30000,premium:60000,luxury:125000},radius:480},
+
+  {id:'hamamatsucho',ko:'하마마츠초',en:'Hamamatsucho',ja:'浜松町',coords:[35.6556,139.7567],rec:false,icon:'flight',
+   sKo:['도쿄 모노레일','세계무역센터','하마리큐 정원'],sEn:['Tokyo Monorail','World Trade Center','Hamarikyu Gardens'],sJa:['東京モノレール','世界貿易センター','浜離宮恩賜庭園'],
+   prices:{capsule:4800,hostel:5500,budget:14500,standard:28000,premium:56000,luxury:115000},radius:460},
+
+  {id:'tamachi',ko:'타마치',en:'Tamachi',ja:'田町',coords:[35.6454,139.7471],rec:false,icon:'corporate_fare',
+   sKo:['게이오 대학교','시바 공원','도쿄 타워 근접'],sEn:['Keio University','Shiba Park','Near Tokyo Tower'],sJa:['慶應義塾大学','芝公園','東京タワー近く'],
+   prices:{capsule:4600,hostel:5300,budget:14000,standard:27000,premium:54000,luxury:110000},radius:450},
+
+  {id:'toyosu',ko:'토요스',en:'Toyosu',ja:'豊洲',coords:[35.6551,139.7957],rec:false,icon:'set_meal',
+   sKo:['도요스 시장','팀랩 플래닛','치이파노 도쿄'],sEn:['Toyosu Market','teamLab Planets','Zepp Tokyo'],sJa:['豊洲市場','チームラボプラネッツ','豊洲ベース'],
+   prices:{capsule:4200,hostel:4900,budget:13000,standard:25000,premium:50000,luxury:100000},radius:480},
+
+  {id:'asakusa',ko:'아사쿠사',en:'Asakusa',ja:'浅草',coords:[35.7148,139.7967],rec:true,icon:'temple_buddhist',
+   sKo:['센소지','나카미세 거리','아사쿠사 문화관광센터','스카이트리 뷰'],
+   sEn:['Senso-ji','Nakamise Street','Asakusa Tourism Info.','Skytree View'],
+   sJa:['浅草寺','仲見世通り','浅草文化観光センター','スカイツリービュー'],
+   prices:{capsule:3500,hostel:4200,budget:11000,standard:21000,premium:42000,luxury:83000},radius:580},
+
+  {id:'skytree',ko:'스카이트리',en:'Skytree',ja:'スカイツリー',coords:[35.7101,139.8107],rec:false,icon:'cell_tower',
+   sKo:['도쿄 스카이트리','소라마치','스미다 수족관'],sEn:['Tokyo Skytree','Solamachi','Sumida Aquarium'],sJa:['東京スカイツリー','ソラマチ','すみだ水族館'],
+   prices:{capsule:3200,hostel:3800,budget:10000,standard:19000,premium:38000,luxury:74000},radius:480},
+
+  {id:'odaiba',ko:'오다이바',en:'Odaiba',ja:'お台場',coords:[35.6267,139.7752],rec:false,icon:'beach_access',
+   sKo:['팀랩 보더리스','다이버시티','건담 동상','후지TV'],sEn:['teamLab Borderless','DiverCity','Gundam Statue','Fuji TV'],sJa:['チームラボボーダレス','ダイバーシティ','ガンダム像','フジテレビ'],
+   prices:{capsule:4500,hostel:5200,budget:14000,standard:27000,premium:54000,luxury:110000},radius:600},
+
+  {id:'shimokitazawa',ko:'시모키타자와',en:'Shimokitazawa',ja:'下北沢',coords:[35.6613,139.6681],rec:false,icon:'music_note',
+   sKo:['라이브하우스','빈티지 숍','인디 뮤직 씬','테라스 하우스 촬영지'],sEn:['Live Houses','Vintage Shops','Indie Music Scene','Terrace House Location'],sJa:['ライブハウス','ヴィンテージショップ','インディーミュージック','テラスハウスロケ地'],
+   prices:{capsule:3800,hostel:4400,budget:11500,standard:21000,premium:42000,luxury:82000},radius:480},
+];
+
+// ══════════════════════════════════════════
+// AREA META
+// ══════════════════════════════════════════
+const AREA_META = {
+  shinjuku:{tagKo:'도쿄 최대의 번화가, 낮과 밤이 빛나는 중심지',tagEn:"Tokyo's neon city that never sleeps",tagJa:'東京最大の繁華街、昼も夜も輝く中心地',icons:['location_city','nightlife','train','shopping_bag']},
+  shibuya:{tagKo:'세계가 주목하는 트렌드의 발원지',tagEn:'Where global trends are born',tagJa:'世界が注目するトレンドの発信地',icons:['directions_walk','shopping_bag','music_note','photo_camera']},
+  ikebukuro:{tagKo:'아니메·쇼핑·먹거리가 모두 모인 북쪽의 중심',tagEn:'Anime, malls & flavours of the north',tagJa:'アニメ・ショッピング・グルメが集まる北の中心',icons:['shopping_bag','sports_esports','local_dining','train']},
+  ueno:{tagKo:'박물관·동물원·공원, 도쿄의 문화 보고',tagEn:'Museums, pandas & cherry-blossom haven',tagJa:'博物館・動物園・公園が揃う文化の宝庫',icons:['park','museum','pets','temple_buddhist']},
+  akihabara:{tagKo:'일본 아니메·전자제품의 성지',tagEn:"Japan's anime & electronics mecca",tagJa:'日本のアニメ・電子製品の聖地',icons:['sports_esports','memory','toys','headphones']},
+  tokyo:{tagKo:'일본 철도의 심장, 황거의 관문',tagEn:'The grand gateway of imperial Japan',tagJa:'日本の鉄道の心臓、皇居の玄関口',icons:['train','castle','business_center','map']},
+  ginza:{tagKo:'도쿄 최고급 쇼핑과 미식의 거리',tagEn:"Tokyo's most prestigious shopping strip",tagJa:'東京最高級のショッピング・グルメの街',icons:['diamond','restaurant','local_mall','wine_bar']},
+  roppongi:{tagKo:'예술과 나이트라이프가 공존하는 국제 구역',tagEn:'Art, nightlife & cosmopolitan culture',tagJa:'アートとナイトライフが共存する国際エリア',icons:['palette','nightlife','museum','language']},
+  harajuku:{tagKo:'일본 서브컬처 패션의 발신지',tagEn:'Birthplace of Japanese street fashion',tagJa:'日本ストリートファッションの発信地',icons:['style','storefront','temple_shinto','photo_camera']},
+  ebisu:{tagKo:'세련된 카페와 맥주의 도시, 다이칸야마',tagEn:'Chic cafés, craft beer & Daikanyama',tagJa:'洗練されたカフェとビールの街',icons:['local_bar','coffee','local_florist','photo_camera']},
+  meguro:{tagKo:'나카메구로 벚꽃길, 힙스터의 성지',tagEn:'Sakura riverside & hip café culture',tagJa:'中目黒の桜並木、ヒップスターカフェの聖地',icons:['local_florist','coffee','directions_walk','forest']},
+  shinagawa:{tagKo:'신칸센 환승역, 비즈니스의 거점',tagEn:'Bullet train hub & business district',tagJa:'新幹線乗換駅とビジネス街の拠点',icons:['directions_railway','business_center','hotel','flight']},
+  osaki:{tagKo:'소니 본사와 IT 기업들의 비즈니스 타운',tagEn:"Sony HQ & corporate tech district",tagJa:'ソニー本社とIT企業のビジネスタウン',icons:['business','computer','apartment','directions_railway']},
+  gotanda:{tagKo:'조용한 주거·쇼핑이 공존하는 동네',tagEn:'Low-key shopping & residential mix',tagJa:'静かな住宅とショッピングが共存する街',icons:['storefront','apartment','train','local_dining']},
+  yoyogi:{tagKo:'도쿄의 허파, 거대한 공원과 메이지 신궁',tagEn:"Tokyo's green lung & Meiji Shrine forest",tagJa:'東京の緑の肺、代々木公園と明治神宮',icons:['nature','park','temple_shinto','directions_walk']},
+  shinokubo:{tagKo:'도쿄 속 작은 서울, K-컬처의 메카',tagEn:'Little Seoul in Tokyo, K-culture mecca',tagJa:'東京の中の小さなソウル、K文化のメッカ',icons:['restaurant','music_note','storefront','groups']},
+  takadanobaba:{tagKo:'와세다 대학 앞, 활기찬 학생 거리',tagEn:"Waseda's lively student town",tagJa:'早稲田大学の活気ある学生街',icons:['school','local_dining','menu_book','groups']},
+  mejiro:{tagKo:'조용하고 격조 있는 고급 주택가',tagEn:'Quiet, refined & upscale neighbourhood',tagJa:'静かで品格ある高級住宅地',icons:['yard','local_florist','school','apartment']},
+  otsuka:{tagKo:'도덴 전차가 달리는 레트로 정취의 거리',tagEn:'Retro tram town with old-school charm',tagJa:'都電が走るレトロな情緒あふれる街',icons:['tram','storefront','local_bar','cottage']},
+  sugamo:{tagKo:'할머니의 하라주쿠, 장수와 불심의 거리',tagEn:"Grandma's Harajuku, Japan's longevity street",tagJa:'おばあちゃんの原宿、長寿と信仰の街',icons:['temple_buddhist','self_improvement','storefront','local_pharmacy']},
+  komagome:{tagKo:'리쿠기엔 정원, 도쿄의 숨겨진 일본식 정원',tagEn:"Rikugien: Tokyo's hidden strolling garden",tagJa:'六義園、東京の隠れた日本庭園の名所',icons:['forest','park','nature','directions_walk']},
+  tabata:{tagKo:'문인과 예술가가 사랑한 문화마을',tagEn:'Artsy village beloved by writers & painters',tagJa:'文人と芸術家が愛した文化村',icons:['cottage','palette','menu_book','forest']},
+  nippori:{tagKo:'섬유 도매상가와 야나카 긴자의 정취',tagEn:'Fabric market meets nostalgic shopping street',tagJa:'繊維街と谷中銀座の情緒',icons:['content_cut','storefront','temple_buddhist','local_dining']},
+  uguisudani:{tagKo:'야나카 옛 도쿄의 조용한 관문',tagEn:"Quiet gateway to old Tokyo's Yanaka",tagJa:'谷中、旧東京への静かな玄関口',icons:['nightlife','temple_buddhist','cottage','directions_walk']},
+  okachimachi:{tagKo:'활기찬 아메요코 시장과 주얼리 타운',tagEn:'Bustling Ameyoko market & jewellery hub',tagJa:'活気あるアメ横市場とジュエリータウン',icons:['storefront','shopping_bag','local_dining','diamond']},
+  kanda:{tagKo:'고서점이 즐비한 진보초, 책의 성지',tagEn:'Jimbocho: paradise for book lovers',tagJa:'古書店が並ぶ神保町、本の聖地',icons:['menu_book','school','local_cafe','history_edu']},
+  yurakucho:{tagKo:'이자카야 골목과 도쿄 국제 포럼의 거리',tagEn:'Izakaya alleys meet Tokyo International Forum',tagJa:'居酒屋横丁と東京国際フォーラムの街',icons:['theater_comedy','local_bar','business_center','train']},
+  shimbashi:{tagKo:'샐러리맨들의 야키토리 성지',tagEn:"Tokyo's favourite post-work yakitori alley",tagJa:'サラリーマンの焼き鳥の聖地',icons:['local_bar','restaurant','train','business_center']},
+  hamamatsucho:{tagKo:'하네다 모노레일 출발역, 바닷가 정원의 관문',tagEn:'Haneda monorail hub & seaside gardens',tagJa:'羽田モノレール乗換駅と浜離宮の玄関口',icons:['flight','directions_railway','local_florist','directions_boat']},
+  tamachi:{tagKo:'게이오 대학가, 도쿄 타워와 가까운 곳',tagEn:'Keio campus & a stroll from Tokyo Tower',tagJa:'慶應大学と東京タワーに近い街',icons:['corporate_fare','school','cell_tower','local_dining']},
+  toyosu:{tagKo:'세계 최대 수산시장과 팀랩의 미래도시',tagEn:"World's biggest fish market & teamLab Planets",tagJa:'世界最大の魚市場とチームラボの未来都市',icons:['set_meal','museum','directions_boat','sports_esports']},
+  asakusa:{tagKo:'700년 역사 센소지, 전통 도쿄의 심장',tagEn:'Senso-ji & the living soul of old Tokyo',tagJa:'浅草寺と江戸情緒あふれる下町の心',icons:['temple_buddhist','storefront','palette','local_dining']},
+  skytree:{tagKo:'세계 2위 전파탑, 소라마치와 스카이 전망',tagEn:"Sky-high views from the world's 2nd tallest tower",tagJa:'世界第2位の電波塔からの絶景とソラマチ',icons:['cell_tower','visibility','shopping_bag','set_meal']},
+  odaiba:{tagKo:'팀랩과 건담, 디즈니랜드 인근의 미래적 인공섬',tagEn:'teamLab, Gundam & near Tokyo Disneyland',tagJa:'チームラボ・ガンダム・ディズニーランド近くの未来島',icons:['beach_access','castle','sports_esports','directions_boat']},
+  shimokitazawa:{tagKo:'인디 음악과 빈티지 패션의 성지',tagEn:"Tokyo's indie music & vintage fashion hub",tagJa:'インディーミュージックとヴィンテージファッションの聖地',icons:['music_note','style','local_bar','coffee']},
+};
+
+// ══════════════════════════════════════════
+// AREA DISTINCT COLORS
+// ══════════════════════════════════════════
+const AREA_COLORS = {
+  shinjuku:'#E74C3C', shibuya:'#8E44AD', ikebukuro:'#2471A3',
+  ueno:'#1E8449',     akihabara:'#D35400', ginza:'#922B21',
+  roppongi:'#6C3483', asakusa:'#B7950B',  harajuku:'#A04000',
+  tokyo:'#1B2631',    skytree:'#0E6655',  odaiba:'#1A5276',
+  shimokitazawa:'#117A65'
+};
+
+const LABEL_OFFSETS = {
+  shinjuku:      { off:[ 0.025, -0.034], dir:'w'  },
+  ikebukuro:     { off:[ 0.000, -0.034], dir:'nw' },
+  harajuku:      { off:[ 0.043, -0.036], dir:'w'  },
+  shibuya:       { off:[-0.022,  0.000], dir:'s'  },
+  shimokitazawa: { off:[ 0.000, -0.020], dir:'w'  },
+  roppongi:      { off:[ 0.000, -0.007], dir:'s'  },
+  ginza:         { off:[-0.018, -0.026], dir:'se' },
+  tokyo:         { off:[ 0.000,  0.022], dir:'e'  },
+  akihabara:     { off:[-0.008,  0.000], dir:'e'  },
+  odaiba:        { off:[ 0.000,  0.022], dir:'e'  },
+  ueno:          { off:[ 0.000, -0.025], dir:'nw' },
+  asakusa:       { off:[ 0.002, -0.020], dir:'ne' },
+  skytree:       { off:[ 0.000,  0.030], dir:'e'  },
+};
+
+// ══════════════════════════════════════════
+// SUBWAY CONNECTIONS
+// ══════════════════════════════════════════
+const AREA_CONNECTIONS = [
+  {ko:'야마노테선 (JR)', color:'#9ACD32', weight:6.5, coords:[[35.7295,139.7109],[35.7212,139.7063],[35.7133,139.7037],[35.6896,139.7006],[35.6830,139.7020],[35.6654,139.7026],[35.6580,139.7016]]},
+  {ko:'야마노테선 (JR)', color:'#9ACD32', weight:6.5, coords:[[35.7295,139.7109],[35.7330,139.7393],[35.7141,139.7774],[35.7070,139.7740],[35.6983,139.7732],[35.6812,139.7671]]},
+  {ko:'주오선 (JR)', color:'#F15A22', weight:5.5, coords:[[35.6896,139.7006],[35.6872,139.7292],[35.6996,139.7663],[35.6983,139.7732],[35.6812,139.7671]]},
+  {ko:'긴자선 (도쿄 메트로)', color:'#FF9500', weight:5.5, coords:[[35.6580,139.7016],[35.6644,139.7132],[35.6758,139.7336],[35.6664,139.7489],[35.6717,139.7649],[35.7021,139.7732],[35.7141,139.7774],[35.7118,139.7968]]},
+  {ko:'한조몬선 (도쿄 메트로)', color:'#8F76D6', weight:5, coords:[[35.6580,139.7016],[35.6700,139.7209],[35.6792,139.7482],[35.6812,139.7671],[35.6983,139.7732],[35.7101,139.8107]]},
+  {ko:'히비야선 (도쿄 메트로)', color:'#9C9C9C', weight:5, coords:[[35.6629,139.7317],[35.6677,139.7449],[35.6741,139.7587],[35.6717,139.7649],[35.7070,139.7740],[35.7141,139.7774]]},
+  {ko:'오에도선 (도에이)', color:'#B6007A', weight:5, coords:[[35.6896,139.7006],[35.6940,139.6939],[35.6750,139.6900],[35.6629,139.7317]]},
+  {ko:'케이오선', color:'#2E75B6', weight:5, coords:[[35.6613,139.6681],[35.6760,139.6810],[35.6896,139.7006]]},
+  {ko:'케이오 이노카시라선', color:'#5BAB3C', weight:5, coords:[[35.6613,139.6681],[35.6580,139.7016]]},
+  {ko:'유리카모메', color:'#00AACC', weight:4.5, coords:[[35.6812,139.7671],[35.6659,139.7577],[35.6440,139.7615],[35.6267,139.7752]]},
+  {ko:'토부 스카이트리선', color:'#1B5FAB', weight:5, coords:[[35.7148,139.7967],[35.7101,139.8107]]},
+];
+
+// ══════════════════════════════════════════
+// ATTRACTIONS
+// ══════════════════════════════════════════
+const ATTRACTIONS = [
+  {id:'senso-ji',   coords:[35.7148,139.7967], area:'asakusa',  emoji:'⛩️', cat:'landmark', types:['landmark','local','photo'],   priority:10, name:{ko:'센소지',          en:'Senso-ji Temple',        ja:'浅草寺'},           desc:{ko:'도쿄 최오래된 절·나카미세 상점가',en:"Tokyo's oldest temple & Nakamise",ja:'浅草寺と仲見世商店街'}},
+  {id:'skytree',    coords:[35.7101,139.8107], area:'skytree',  emoji:'🗼', cat:'activity', types:['landmark','activity','photo'], priority:9,  name:{ko:'스카이트리',       en:'Tokyo Skytree',          ja:'東京スカイツリー'},  desc:{ko:'634m 전망대, 도쿄 한눈에',       en:'634m observation deck',             ja:'634m展望台から東京を一望'}},
+  {id:'shibuya-x',  coords:[35.6595,139.7004], area:'shibuya',  emoji:'🚶', cat:'landmark', types:['landmark','photo'],            priority:9,  name:{ko:'시부야 스크램블', en:'Shibuya Crossing',       ja:'スクランブル交差点'}, desc:{ko:'세계에서 가장 유명한 교차로',   en:"World's busiest crossing",          ja:'世界一有名な交差点'}},
+  {id:'tsukiji',    coords:[35.6654,139.7706], area:'ginza',    emoji:'🐟', cat:'food',     types:['food','local'],                priority:8,  name:{ko:'츠키지 시장',     en:'Tsukiji Market',         ja:'築地市場'},          desc:{ko:'신선 해산물·일본 길거리 음식',  en:'Fresh seafood & street food',       ja:'新鮮な海産物と街角グルメ'}},
+  {id:'meiji',      coords:[35.6763,139.6993], area:'harajuku', emoji:'🌿', cat:'landmark', types:['landmark','local','photo'],    priority:8,  name:{ko:'메이지 신궁',     en:'Meiji Jingu Shrine',     ja:'明治神宮'},          desc:{ko:'울창한 숲 속 도심 신사',       en:'Shinto shrine in urban forest',     ja:'都心の森の中の明治神宮'}},
+  {id:'teamlab',    coords:[35.6217,139.7754], area:'odaiba',   emoji:'🌊', cat:'activity', types:['activity','photo'],            priority:8,  name:{ko:'팀랩 플래닛',     en:'teamLab Planets',        ja:'チームラボプラネッツ'},desc:{ko:'몰입형 디지털 아트 체험',       en:'Immersive digital art experience',  ja:'没入型デジタルアート体験'}},
+  {id:'ueno-park',  coords:[35.7141,139.7774], area:'ueno',     emoji:'🌳', cat:'local',    types:['local','landmark','photo'],    priority:7,  name:{ko:'우에노 공원',     en:'Ueno Park & Museums',    ja:'上野公園と博物館'},   desc:{ko:'국립박물관·동물원·벚꽃 명소', en:'Museums, zoo & cherry blossoms',    ja:'博物館・動物園・花見の名所'}},
+  {id:'harajuku-t', coords:[35.6702,139.7025], area:'harajuku', emoji:'🎀', cat:'shopping', types:['shopping','local','photo'],    priority:7,  name:{ko:'하라주쿠 타케시타',en:'Harajuku Takeshita St.', ja:'原宿竹下通り'},      desc:{ko:'팝컬처·패션의 아이코닉 거리', en:'Kawaii fashion & pop culture',      ja:'カワイイファッションの聖地'}},
+  {id:'akiba',      coords:[35.6983,139.7732], area:'akihabara',emoji:'🎮', cat:'shopping', types:['shopping','local','activity'], priority:7,  name:{ko:'아키하바라',      en:'Akihabara Electric Town',ja:'秋葉原電気街'},       desc:{ko:'애니메이션·전자기기 성지',     en:'Anime & electronics mecca',         ja:'アニメ・電気の聖地'}},
+  {id:'nakameguro', coords:[35.6440,139.6988], area:'meguro',   emoji:'☕', cat:'local',    types:['local','photo','food'],        priority:7,  name:{ko:'나카메구로',      en:'Nakameguro',             ja:'中目黒'},             desc:{ko:'메구로강변 카페거리·벚꽃 터널',en:'Riverside cafes & sakura tunnel',  ja:'目黒川カフェ・桜のトンネル'}},
+  {id:'shimokita',  coords:[35.6614,139.6678], area:'shimokitazawa',emoji:'🎸',cat:'local', types:['local','food','photo'],        priority:6,  name:{ko:'시모키타자와',    en:'Shimokitazawa',          ja:'下北沢'},             desc:{ko:'빈티지 숍·재즈 바의 힙스터 동네',en:'Vintage shops & indie music',    ja:'ヴィンテージとインディーミュージック'}},
+  {id:'yanaka',     coords:[35.7258,139.7667], area:'ueno',     emoji:'🏮', cat:'local',    types:['local','photo','food'],        priority:6,  name:{ko:'야나카',          en:'Yanaka Old Town',        ja:'谷中'},               desc:{ko:'에도 시대 분위기의 레트로 마을',en:'Old Edo atmosphere & crafts',      ja:'江戸の情緒が残る下町'}},
+  {id:'ramen-st',   coords:[35.6812,139.7671], area:'tokyo',    emoji:'🍜', cat:'food',     types:['food'],                       priority:7,  name:{ko:'라멘 스트리트',   en:'Ramen Street (Tokyo Stn)',ja:'東京駅ラーメンストリート'},desc:{ko:'도쿄역 지하 유명 라멘 8개 맛집',en:'8 famous ramen shops underground',ja:'東京駅地下の有名ラーメン店8店'}},
+  {id:'ginza-shop', coords:[35.6695,139.7632], area:'ginza',    emoji:'💎', cat:'shopping', types:['shopping'],                   priority:6,  name:{ko:'긴자 쇼핑',       en:'Ginza Shopping District',ja:'銀座ショッピング'},   desc:{ko:'명품·백화점 밀집 고급 거리',   en:'Luxury brands & dept. stores',      ja:'高級ブランドとデパートが集まる'}},
+  {id:'odaiba-g',   coords:[35.6267,139.7752], area:'odaiba',   emoji:'🤖', cat:'activity', types:['activity','photo'],           priority:6,  name:{ko:'오다이바 건담',   en:'Odaiba Gundam Statue',   ja:'お台場ガンダム像'},   desc:{ko:'실물 크기 건담 동상·해변 전망',en:'Life-size Gundam & waterfront views',ja:'実物大ガンダム像と海のビュー'}},
+];
+
+// ══════════════════════════════════════════
+// AIRPORTS
+// ══════════════════════════════════════════
+const AIRPORTS = [
+  {id:'narita', code:'NRT', emoji:'✈️',
+   name:{ko:'나리타 국제공항',en:'Narita Int\'l Airport',ja:'成田国際空港'},
+   coords:[35.7720,140.3929],
+   access:{
+     shinjuku:{min:90, line:{ko:'나리타 익스프레스(NEX)',en:'Narita Express',ja:'成田エクスプレス'}},
+     ueno:    {min:60, line:{ko:'케이세이 스카이라이너',en:'Keisie Skyliner',ja:'スカイライナー'}},
+     asakusa: {min:72, line:{ko:'스카이라이너+환승',    en:'Skyliner+Transfer',ja:'スカイライナー+乗換'}},
+     tokyo:   {min:80, line:{ko:'나리타 익스프레스',    en:'Narita Express',  ja:'成田エクスプレス'}},
+     shibuya: {min:85, line:{ko:'나리타 익스프레스',    en:'Narita Express',  ja:'成田エクスプレス'}},
+   }},
+  {id:'haneda', code:'HND', emoji:'✈️',
+   name:{ko:'하네다 공항',en:'Haneda Airport',ja:'羽田空港'},
+   coords:[35.5494,139.7798],
+   access:{
+     shinagawa:{min:20, line:{ko:'케이큐 공항선',       en:'Keikyu Airport Line',ja:'京急空港線'}},
+     shinjuku: {min:38, line:{ko:'케이큐+도에이 아사쿠사선',en:'Keikyu+Toei',  ja:'京急+都営浅草線'}},
+     shibuya:  {min:35, line:{ko:'케이큐 공항선',       en:'Keikyu Airport',  ja:'京急空港線'}},
+     ginza:    {min:30, line:{ko:'케이큐 직통',          en:'Keikyu Direct',   ja:'京急直通'}},
+     hamamatsucho:{min:18,line:{ko:'도쿄 모노레일',     en:'Tokyo Monorail',  ja:'東京モノレール'}},
+   }},
+];
+
+// ══════════════════════════════════════════
+// AREA TAGS & IMAGES
+// ══════════════════════════════════════════
+const AREA_TAGS = {
+  shinjuku:      {ko:['교통 허브','쇼핑','야경','번화가'],           en:['Transit Hub','Shopping','Night Views','Bustling']},
+  shibuya:       {ko:['트렌디','패션','젊은 분위기','스크램블'],      en:['Trendy','Fashion','Youth Vibe','Scramble']},
+  ikebukuro:     {ko:['쇼핑','애니메이션','로컬 감성','가성비'],      en:['Shopping','Anime','Local Feel','Budget-friendly']},
+  ueno:          {ko:['박물관','공원','재래시장','가성비'],            en:['Museums','Parks','Markets','Budget-friendly']},
+  akihabara:     {ko:['전자상가','애니메이션','게임','오타쿠'],        en:['Electronics','Anime','Gaming','Otaku']},
+  tokyo:         {ko:['황거','비즈니스','고급','교통 중심'],           en:['Imperial Palace','Business','Upscale','Central']},
+  ginza:         {ko:['명품','고급 쇼핑','미식','갤러리'],             en:['Luxury','High-end Shopping','Gourmet','Gallery']},
+  asakusa:       {ko:['전통','사원','레트로','스카이트리'],             en:['Traditional','Temple','Retro','Skytree']},
+  harajuku:      {ko:['팝컬처','패션','신궁','트렌드'],                en:['Pop Culture','Fashion','Shrine','Trending']},
+  roppongi:      {ko:['나이트라이프','미술관','고급','국제적'],        en:['Nightlife','Art Museums','Upscale','International']},
+  odaiba:        {ko:['해변','쇼핑몰','미래적','체험'],                en:['Waterfront','Malls','Futuristic','Experience']},
+  shimokitazawa: {ko:['힙스터','빈티지','재즈','로컬 인디'],           en:['Hipster','Vintage','Jazz','Local Indie']},
+  meguro:        {ko:['카페','강변','감성적','힙스터'],                en:['Cafes','Riverside','Aesthetic','Hipster']},
+  ebisu:         {ko:['고급','조용함','식당','세련됨'],                en:['Upscale','Quiet','Dining','Sophisticated']},
+  shinagawa:     {ko:['공항 접근성','비즈니스','교통 허브'],           en:['Airport Access','Business','Transit Hub']},
+};
+const AREA_IMAGES = {
+  shinjuku:   'https://picsum.photos/seed/tokyo-shinjuku/400/100',
+  shibuya:    'https://picsum.photos/seed/tokyo-shibuya/400/100',
+  ikebukuro:  'https://picsum.photos/seed/tokyo-ikebukuro/400/100',
+  ueno:       'https://picsum.photos/seed/tokyo-ueno/400/100',
+  akihabara:  'https://picsum.photos/seed/tokyo-akiba/400/100',
+  tokyo:      'https://picsum.photos/seed/tokyo-station/400/100',
+  ginza:      'https://picsum.photos/seed/tokyo-ginza/400/100',
+  asakusa:    'https://picsum.photos/seed/tokyo-asakusa/400/100',
+  harajuku:   'https://picsum.photos/seed/tokyo-harajuku/400/100',
+  roppongi:   'https://picsum.photos/seed/tokyo-roppongi/400/100',
+  odaiba:     'https://picsum.photos/seed/tokyo-odaiba/400/100',
+  shimokitazawa:'https://picsum.photos/seed/tokyo-shimokita/400/100',
+  meguro:     'https://picsum.photos/seed/tokyo-meguro/400/100',
+  ebisu:      'https://picsum.photos/seed/tokyo-ebisu/400/100',
+  shinagawa:  'https://picsum.photos/seed/tokyo-shinagawa/400/100',
+};
+
+// ══════════════════════════════════════════
+// PLANNER TRAVEL TYPES
+// ══════════════════════════════════════════
+const TRAVEL_TYPES = [
+  {id:'food',     emoji:'🍜', ko:'맛집 투어',        en:'Food Tour',       ja:'グルメ巡り'},
+  {id:'landmark', emoji:'🏛️', ko:'유명 장소 도장깨기',en:'Famous Spots',    ja:'名所巡り'},
+  {id:'local',    emoji:'🎭', ko:'로컬 문화/컨텐츠', en:'Local Culture',   ja:'ローカル体験'},
+  {id:'activity', emoji:'🏃', ko:'액티비티',         en:'Activities',      ja:'アクティビティ'},
+  {id:'shopping', emoji:'🛍️', ko:'쇼핑',             en:'Shopping',        ja:'ショッピング'},
+  {id:'photo',    emoji:'📸', ko:'감성/사진',         en:'Photo Spots',     ja:'フォトスポット'},
+];
+const MAX_TYPE_SEL = 3;
+
+// Recommended area per travel type combination
+const TYPE_AREA_SCORE = {
+  food:     {shinjuku:9,ginza:8,shibuya:7,ueno:8,asakusa:7,akihabara:6,meguro:7,shinokubo:10},
+  landmark: {asakusa:10,tokyo:9,harajuku:8,shibuya:8,ueno:8,odaiba:7,roppongi:7},
+  local:    {asakusa:9,shimokitazawa:10,meguro:8,ueno:7,harajuku:7,yanaka:9},
+  activity: {odaiba:10,asakusa:8,shibuya:7,roppongi:7,skytree:8},
+  shopping: {shinjuku:10,shibuya:9,harajuku:8,akihabara:7,ginza:9,ikebukuro:8},
+  photo:    {shibuya:9,asakusa:9,harajuku:8,meguro:9,shimokitazawa:8,odaiba:7},
+};
+const DAY_COLORS = ['#3b82f6','#22c55e','#f97316','#a855f7','#ef4444','#06b6d4','#eab308'];
+
+// ══════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════
+const THRESH = [4000,8000,14000,22000,35000];
+const COLORS = ['#22c55e','#84cc16','#eab308','#f97316','#ef4444','#a855f7'];
+
+let currentLang = 'ko';
+let currentType = 'capsule';
+let currentCurrency = 'KRW';
+let currentCompanion = 'solo';
+let selectedTypes = [];
+let plannerNights = 3;
+
+// Overlay layers
+const attrLayer    = L.layerGroup();
+const airportLayer = L.layerGroup();
+const routeLayer   = L.layerGroup();
+let attrVisible    = false;
+let airportVisible = false;
+
+const EX  = {JPY:1, KRW:9.5, USD:0.0067};
+const SYM = {JPY:'¥', KRW:'₩', USD:'$'};
+
+function fmt(jpy){
+  const v = Math.round(jpy * EX[currentCurrency]);
+  return SYM[currentCurrency] + v.toLocaleString();
+}
+
+function getColor(price){
+  for(let i=0;i<THRESH.length;i++) if(price<THRESH[i]) return COLORS[i];
+  return COLORS[5];
+}
+
+// ══════════════════════════════════════════
+// TYPE PRICE RANGES
+// ══════════════════════════════════════════
+const TYPE_RANGES_JPY = {
+  capsule:  [2500,  6000],
+  hostel:   [2500,  8500],
+  budget:   [8000,  18000],
+  standard: [15000, 35000],
+  premium:  [30000, 80000],
+  luxury:   [60000, null],
+};
+
+function fmtRangeVal(jpy){
+  const v = jpy * EX[currentCurrency];
+  if(currentCurrency==='JPY') return SYM.JPY + Math.round(v).toLocaleString();
+  if(currentCurrency==='KRW') return SYM.KRW + Math.round(v/1000).toLocaleString() + 'k';
+  return SYM.USD + Math.round(v).toLocaleString();
+}
+
+function updateTypeRanges(){
+  Object.entries(TYPE_RANGES_JPY).forEach(([type,[min,max]])=>{
+    const el = document.getElementById('tr-'+type);
+    if(!el) return;
+    el.textContent = max===null ? fmtRangeVal(min)+'+' : fmtRangeVal(min)+'~'+fmtRangeVal(max);
+  });
+}
+
+// ══════════════════════════════════════════
+// MAP INIT
+// ══════════════════════════════════════════
+const map = L.map('map',{center:[35.6900,139.7500],zoom:12,zoomControl:true});
+let baseTile = null;
+function setBaseTile(lang){
+  if(baseTile) map.removeLayer(baseTile);
+  baseTile = L.tileLayer(
+    `https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png?language=${lang}`,
+    {attribution:'&copy; <a href="https://stadiamaps.com/">Stadia Maps</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',maxZoom:20}
+  ).addTo(map);
+}
+setBaseTile('ko');
+attrLayer.addTo(map);
+airportLayer.addTo(map);
+routeLayer.addTo(map);
+
+const subwayLayer    = L.layerGroup().addTo(map);
+const circles        = L.layerGroup().addTo(map);
+const connectorLayer = L.layerGroup().addTo(map);
+const markers        = L.layerGroup().addTo(map);
+const labelLayer     = L.layerGroup().addTo(map);
+const baseCircles    = {};
+
+// ══════════════════════════════════════════
+// MARKER ICON
+// ══════════════════════════════════════════
+function makeIcon(area, color){
+  const html = `
+    <div style="
+      width:46px;height:46px;border-radius:50%;
+      background:${color};border:2.5px solid rgba(255,255,255,.85);
+      box-shadow:0 3px 16px rgba(0,0,0,.5);
+      display:flex;align-items:center;justify-content:center;
+      position:relative;cursor:pointer;">
+      <span class="material-symbols-outlined" style="font-size:22px;color:#fff;">directions_subway</span>
+      ${area.rec?`<div style="position:absolute;top:-3px;right:-3px;width:15px;height:15px;background:#f97316;border-radius:50%;border:2px solid #0b0e1a;display:flex;align-items:center;justify-content:center;font-size:7px;color:#fff;font-weight:900;">★</div>`:''}
+    </div>`;
+  return L.divIcon({html, className:'', iconSize:[46,46], iconAnchor:[23,23], popupAnchor:[0,-26]});
+}
+
+// ══════════════════════════════════════════
+// AREA LABEL
+// ══════════════════════════════════════════
+const LABEL_AREAS = ['shinjuku','shibuya','ikebukuro','ueno','akihabara','ginza','roppongi','asakusa','harajuku','tokyo','skytree','odaiba','shimokitazawa'];
+
+function hoverArea(id){
+  const bc = baseCircles[id];
+  const c  = AREA_COLORS[id] || '#f97316';
+  if(bc) bc.setStyle({fillOpacity:.55, opacity:1, weight:3, color:c, fillColor:c});
+}
+function unhoverArea(id){
+  const bc = baseCircles[id];
+  const c  = AREA_COLORS[id] || '#f97316';
+  if(bc) bc.setStyle({fillOpacity:.22, opacity:.8, weight:2, color:c, fillColor:c});
+}
+
+function makeAreaLabel(area, dir){
+  const meta     = AREA_META[area.id] || {};
+  const aColor   = AREA_COLORS[area.id] || '#f97316';
+  const name     = area[currentLang] || area.ko;
+  const tag      = currentLang==='ko'?meta.tagKo : currentLang==='en'?meta.tagEn : meta.tagJa;
+  const iconList = (meta.icons || [area.icon]).slice(0,2);
+  const iconsHtml = iconList.map(ic=>
+    `<span class="material-symbols-outlined" style="color:${aColor};">${ic}</span>`
+  ).join('');
+  const tfmMap = {
+    n:  'translateX(-50%) translateY(-100%)',
+    s:  'translateX(-50%)',
+    e:  'translateY(-50%)',
+    w:  'translateX(-100%) translateY(-50%)',
+    ne: 'translateY(-100%)',
+    nw: 'translateX(-100%) translateY(-100%)',
+    se: '',
+    sw: 'translateX(-100%)',
+  };
+  const tfm = tfmMap[dir] || tfmMap.s;
+  const html = `
+    <div style="position:relative;width:0;height:0;">
+      <div class="area-label"
+        style="position:absolute;transform:${tfm};"
+        onmouseenter="this.style.borderColor='${aColor}';this.style.boxShadow='0 8px 28px rgba(0,0,0,.7),0 0 0 1px ${aColor}';hoverArea('${area.id}');"
+        onmouseleave="this.style.borderColor='rgba(255,255,255,.12)';this.style.boxShadow='0 4px 18px rgba(0,0,0,.55)';unhoverArea('${area.id}');">
+        <div class="al-icons">${iconsHtml}</div>
+        <div class="al-name">${name}</div>
+        ${tag?`<div class="al-tagline">${tag}</div>`:''}
+      </div>
+    </div>`;
+  return L.divIcon({html, className:'', iconSize:[0,0], iconAnchor:[0,0]});
+}
+
+// ══════════════════════════════════════════
+// POPUP
+// ══════════════════════════════════════════
+function makePopup(area){
+  const t     = TR[currentLang];
+  const price = area.prices[currentType];
+  const color = getColor(price);
+  const name  = area[currentLang] || area.ko;
+  const spots = (currentLang==='ko'?area.sKo:currentLang==='en'?area.sEn:area.sJa)||[];
+  const spotTags = spots.map(s=>`<span class="pu-tag">${s}</span>`).join('');
+  const rows  = Object.entries(area.prices).map(([k,v])=>{
+    const active = k===currentType?'pu-active':'';
+    const icon   = {capsule:'bedroom_parent',hostel:'backpack',budget:'apartment',standard:'hotel',premium:'star',luxury:'diamond'}[k];
+    return `<div class="pu-row ${active}">
+      <span class="pu-label"><span class="material-symbols-outlined" style="font-size:14px;">${icon}</span>${t.types[k]}</span>
+      <span class="pu-val">${fmt(v)}<span class="pu-night">${t.perNight}</span></span>
+    </div>`;
+  }).join('');
+  const q = encodeURIComponent(name+' hotel Tokyo');
+
+  // area characteristic tags
+  const charTagsData = AREA_TAGS[area.id];
+  const charTagsHtml = charTagsData
+    ? charTagsData[currentLang==='ja'?'en':currentLang].map(t=>`<span class="pu-char-tag">${t}</span>`).join('')
+    : '';
+
+  // image
+  const imgSrc = AREA_IMAGES[area.id];
+  const imgHtml = imgSrc ? `<img class="pu-img" src="${imgSrc}" alt="${name}" loading="lazy">` : '';
+
+  // airport access
+  const apRows = AIRPORTS.map(ap=>{
+    const acc = ap.access[area.id];
+    if(!acc) return '';
+    const apName = ap.name[currentLang==='ja'?'ja':currentLang==='en'?'en':'ko'];
+    const lineName = acc.line[currentLang==='ja'?'ja':currentLang==='en'?'en':'ko'];
+    return `<div class="pu-access-row">
+      <span class="pu-access-ap">✈️ ${ap.code} <span style="font-weight:400;color:var(--text3)">${apName}</span></span>
+      <span><span class="pu-access-time">${acc.min}분</span> <span class="pu-access-line">${lineName}</span></span>
+    </div>`;
+  }).join('');
+  const accessHtml = apRows ? `<div class="pu-access"><div class="pu-access-hd">✈️ ${currentLang==='en'?'Airport Access':currentLang==='ja'?'空港アクセス':'공항 접근성'}</div>${apRows}</div>` : '';
+
+  return `<div class="pu-wrap">
+    ${imgHtml}
+    <div class="pu-head">
+      <div class="pu-picto" style="background:${color};">
+        <span class="material-symbols-outlined">${area.icon}</span>
+      </div>
+      <div>
+        <div class="pu-name">${name}${area.rec?`<span class="pu-badge">${t.rec}</span>`:''}</div>
+        <div class="pu-sub">${t.avgPrice}</div>
+      </div>
+    </div>
+    ${charTagsHtml?`<div class="pu-char-tags">${charTagsHtml}</div>`:''}
+    <div class="pu-tags">${spotTags}</div>
+    <div class="pu-table">${rows}</div>
+    ${accessHtml}
+    <div class="pu-btns" style="margin-top:10px">
+      <a class="pu-btn pu-google"  href="https://www.google.com/maps/search/${q}" target="_blank">
+        <span class="material-symbols-outlined" style="font-size:13px;">map</span>Maps
+      </a>
+      <a class="pu-btn pu-booking" href="https://www.booking.com/searchresults.html?ss=${q}" target="_blank">
+        <span class="material-symbols-outlined" style="font-size:13px;">hotel</span>Booking
+      </a>
+    </div>
+  </div>`;
+}
+
+// ══════════════════════════════════════════
+// RENDER MAP
+// ══════════════════════════════════════════
+function renderMap(){
+  circles.clearLayers();
+  connectorLayer.clearLayers();
+  markers.clearLayers();
+  labelLayer.clearLayers();
+  Object.keys(baseCircles).forEach(k=>delete baseCircles[k]);
+
+  AREAS.forEach(area=>{
+    if(!LABEL_AREAS.includes(area.id)) return;
+    const priceColor = getColor(area.prices[currentType]);
+    const aColor     = AREA_COLORS[area.id] || priceColor;
+
+    const bc = L.circle(area.coords,{
+      radius:500, color:aColor, fillColor:aColor,
+      fillOpacity:.22, weight:2, opacity:.8
+    }).bindPopup(()=>makePopup(area),{maxWidth:320,minWidth:272}).addTo(circles);
+    baseCircles[area.id] = bc;
+
+    L.marker(area.coords,{icon:makeIcon(area,priceColor)})
+      .bindPopup(()=>makePopup(area),{maxWidth:320,minWidth:272})
+      .addTo(markers);
+
+    const lo       = LABEL_OFFSETS[area.id] || { off:[0.022,0], dir:'n' };
+    const labelPos = [area.coords[0]+lo.off[0], area.coords[1]+lo.off[1]];
+
+    const connector = L.polyline([area.coords, labelPos],{
+      color:aColor, weight:1.5, opacity:.55, dashArray:'4 4'
+    }).addTo(connectorLayer);
+
+    L.circleMarker(area.coords,{
+      radius:5, color:'rgba(255,255,255,.8)', weight:2, fillColor:aColor, fillOpacity:1
+    }).addTo(connectorLayer);
+
+    const lblMarker = L.marker(labelPos,{
+      icon:makeAreaLabel(area, lo.dir),
+      zIndexOffset:300,
+      draggable:true
+    }).addTo(labelLayer);
+
+    lblMarker.on('drag', function(e){
+      connector.setLatLngs([area.coords, e.target.getLatLng()]);
+    });
+  });
+
+  // Disney special marker
+  const _svgEl  = document.querySelector('svg.leaflet-zoom-animated');
+  const _mapEl  = map.getContainer();
+  const _sr     = _svgEl ? _svgEl.getBoundingClientRect() : {left:0,top:0};
+  const _mr     = _mapEl.getBoundingClientRect();
+  const _cx     = Math.round(_mr.left - _sr.left);
+  const _cy     = Math.round(_mr.top  - _sr.top);
+
+  const disneyCoords  = [35.6329, 139.8804];
+  const disneyColor   = '#E91E8C';
+  const disneyName    = currentLang==='en'?'Tokyo Disneyland':currentLang==='ja'?'東京ディズニーランド':'디즈니랜드';
+  const disneyTagline = currentLang==='en'?'Disney Resort ✨ Urayasu'
+                      : currentLang==='ja'?'ディズニーリゾート ✨ 浦安'
+                      : '디즈니리조트 ✨ 우라야스';
+
+  const disneyConnector = L.polyline([[35.6267,139.7752], disneyCoords],{
+    color:disneyColor, weight:1.5, opacity:.45, dashArray:'4 4'
+  }).addTo(connectorLayer);
+
+  L.circleMarker(disneyCoords,{radius:14,color:'rgba(255,255,255,.7)',weight:2.5,fillColor:disneyColor,fillOpacity:1}).addTo(connectorLayer);
+  L.circleMarker(disneyCoords,{radius:5, color:'rgba(255,255,255,.8)',weight:2,  fillColor:disneyColor,fillOpacity:1}).addTo(connectorLayer);
+
+  const disneyHtml = `
+    <div style="position:relative;width:0;height:0;">
+      <div class="disney-label" style="position:absolute;transform:translateX(-100%) translateY(-50%);"
+           onmouseenter="this.style.borderColor='${disneyColor}';"
+           onmouseleave="this.style.borderColor='rgba(233,30,140,.2)';">
+        <div class="dl-icons">
+          <span class="material-symbols-outlined" style="color:${disneyColor};">castle</span>
+          <span class="material-symbols-outlined" style="color:${disneyColor};">celebration</span>
+          <span class="material-symbols-outlined" style="color:#FFD700;">star</span>
+        </div>
+        <div class="dl-name" style="color:${disneyColor};">${disneyName}</div>
+        <div class="dl-tag">${disneyTagline}</div>
+      </div>
+    </div>`;
+
+  const disneyMarker = L.marker(disneyCoords,{
+    icon:L.divIcon({html:disneyHtml,className:'',iconSize:[0,0],iconAnchor:[_cx,_cy]}),
+    zIndexOffset:400,
+    draggable:true
+  }).addTo(labelLayer);
+
+  disneyMarker.on('drag', function(e){
+    disneyConnector.setLatLngs([[35.6267,139.7752], e.target.getLatLng()]);
+  });
+}
+
+// ══════════════════════════════════════════
+// SUBWAY CONNECTIONS
+// ══════════════════════════════════════════
+function renderConnections(){
+  subwayLayer.clearLayers();
+  AREA_CONNECTIONS.forEach(line=>{
+    L.polyline(line.coords,{
+      color:'rgba(0,0,0,.4)', weight:line.weight+3,
+      opacity:.6, lineJoin:'round', lineCap:'round'
+    }).addTo(subwayLayer);
+    L.polyline(line.coords,{
+      color:line.color, weight:line.weight,
+      opacity:.85, lineJoin:'round', lineCap:'round'
+    }).bindTooltip(line.ko,{
+      sticky:true, direction:'top', className:'subway-tip', offset:[0,-4]
+    }).addTo(subwayLayer);
+  });
+}
+
+// ══════════════════════════════════════════
+// LANGUAGE & CONTROLS
+// ══════════════════════════════════════════
+function applyLang(){
+  const t = TR[currentLang];
+  document.getElementById('h-title').textContent   = t.title;
+  document.getElementById('h-sub').textContent     = t.sub;
+  document.getElementById('h-hint').textContent    = t.hint;
+  document.getElementById('sec-type').textContent   = t.secType;
+  document.getElementById('sec-legend').textContent = t.secLegend;
+  document.getElementById('sec-notes').textContent  = t.secNotes;
+  document.getElementById('sec-subway').textContent = t.secSubway;
+  Object.keys(t.types).forEach(k=>{
+    const el = document.getElementById('tn-'+k);
+    if(el) el.textContent = t.types[k];
+  });
+  t.legLabels.forEach((lbl,i)=>{ const el=document.getElementById('ll'+i); if(el) el.textContent=lbl; });
+  t.legColors.forEach((lbl,i)=>{ const el=document.getElementById('lc'+i); if(el) el.textContent=lbl; });
+  t.notes.forEach((note,i)=>{ const el=document.getElementById('nt'+i); if(el) el.textContent=note; });
+  document.getElementById('area-count').textContent = AREAS.length + t.unit;
+  document.documentElement.lang = currentLang;
+  // update subway toggle text
+  const subBtn = document.getElementById('subway-toggle-btn');
+  const isOpen = document.getElementById('subway-list').classList.contains('open');
+  if(subBtn) subBtn.textContent = isOpen ? t.collapse : t.expand;
+}
+
+function setLang(lang){
+  currentLang = lang;
+  ['ko','en','ja'].forEach(l=>{
+    document.getElementById('lang-'+l).classList.toggle('active', l===lang);
+  });
+  setBaseTile(lang);
+  applyLang();
+  renderMap();
+}
+
+function setType(type){
+  currentType = type;
+  document.querySelectorAll('.type-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+type).classList.add('active');
+  renderMap();
+}
+
+function setCur(cur){
+  currentCurrency = cur;
+  ['JPY','KRW','USD'].forEach(c=>{
+    document.getElementById('btn-'+c.toLowerCase()).classList.toggle('active', c===cur);
+  });
+  updateTypeRanges();
+  renderMap();
+}
+
+// ══════════════════════════════════════════
+// SIDEBAR & SUBWAY TOGGLE
+// ══════════════════════════════════════════
+function toggleSidebar(){
+  const sb    = document.getElementById('sidebar');
+  const btn   = document.getElementById('sb-toggle');
+  const open  = sb.classList.toggle('collapsed');
+  btn.textContent = open ? '›' : '‹';
+  btn.style.left  = open ? '0' : '272px';
+  setTimeout(()=>map.invalidateSize(), 280);
+}
+
+function toggleSubway(){
+  const list = document.getElementById('subway-list');
+  const btn  = document.getElementById('subway-toggle-btn');
+  const t    = TR[currentLang];
+  const open = list.classList.toggle('open');
+  btn.textContent = open ? t.collapse : t.expand;
+}
+
+// ══════════════════════════════════════════
+// SUBWAY SIDEBAR LIST
+// ══════════════════════════════════════════
+function renderSubwayList(){
+  const seen   = new Set();
+  const unique = AREA_CONNECTIONS.filter(l=>{
+    if(seen.has(l.ko)) return false;
+    seen.add(l.ko); return true;
+  });
+  document.getElementById('subway-list').innerHTML = unique.map(l=>{
+    const m    = l.ko.match(/^(.+?)(?:\s*\((.+?)\))?$/);
+    const name = m[1], org = m[2]||'';
+    return `<div class="sl-item">
+      <div class="sl-swatch" style="background:${l.color}"></div>
+      <div class="sl-name">${name}${org?`<span class="sl-org">${org}</span>`:''}</div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+// COMPANION FILTER
+// ══════════════════════════════════════════
+function setCompanion(type){
+  currentCompanion = type;
+  ['solo','couple','friends','family'].forEach(c=>{
+    document.getElementById('comp-'+c).classList.toggle('active', c===type);
+  });
+}
+
+// ══════════════════════════════════════════
+// ATTRACTION OVERLAY
+// ══════════════════════════════════════════
+function renderAttractions(){
+  attrLayer.clearLayers();
+  if(!attrVisible) return;
+  ATTRACTIONS.forEach(a=>{
+    const n = a.name[currentLang] || a.name.ko;
+    const icon = L.divIcon({
+      html:`<div class="attr-dot attr-${a.cat}" title="${n}">${a.emoji}</div>`,
+      className:'', iconSize:[30,30], iconAnchor:[15,15]
+    });
+    L.marker(a.coords, {icon, zIndexOffset:200})
+      .bindTooltip(`<b>${n}</b><br><span style="color:var(--text3);font-size:.65rem">${(a.desc[currentLang]||a.desc.ko)}</span>`,
+        {direction:'top', className:'subway-tip', offset:[0,-14]})
+      .addTo(attrLayer);
+  });
+}
+
+function toggleAttractions(){
+  attrVisible = !attrVisible;
+  document.getElementById('ovl-attr').classList.toggle('active', attrVisible);
+  renderAttractions();
+}
+
+// ══════════════════════════════════════════
+// AIRPORT OVERLAY
+// ══════════════════════════════════════════
+function renderAirports(){
+  airportLayer.clearLayers();
+  if(!airportVisible) return;
+  AIRPORTS.forEach(ap=>{
+    const n = ap.name[currentLang] || ap.name.ko;
+    const icon = L.divIcon({
+      html:`<div class="ap-chip">${ap.emoji} ${ap.code}</div>`,
+      className:'', iconSize:[60,24], iconAnchor:[30,12]
+    });
+    L.marker(ap.coords, {icon, zIndexOffset:200})
+      .bindTooltip(`<b>${n}</b>`, {direction:'top', className:'subway-tip'})
+      .addTo(airportLayer);
+  });
+}
+
+function toggleAirports(){
+  airportVisible = !airportVisible;
+  document.getElementById('ovl-airport').classList.toggle('active', airportVisible);
+  renderAirports();
+}
+
+// ══════════════════════════════════════════
+// PLANNER
+// ══════════════════════════════════════════
+function openPlanner(){
+  renderTravelTypeGrid();
+  document.getElementById('planner-overlay').classList.add('open');
+}
+function closePlanner(){
+  document.getElementById('planner-overlay').classList.remove('open');
+}
+function changeNights(delta){
+  plannerNights = Math.max(1, Math.min(14, plannerNights + delta));
+  document.getElementById('nights-val').textContent = plannerNights;
+}
+function renderTravelTypeGrid(){
+  document.getElementById('types-sel-grid').innerHTML = TRAVEL_TYPES.map(tt=>{
+    const active  = selectedTypes.includes(tt.id) ? 'active' : '';
+    const maxed   = !selectedTypes.includes(tt.id) && selectedTypes.length>=MAX_TYPE_SEL ? 'maxed' : '';
+    const nm = currentLang==='en'?tt.en:currentLang==='ja'?tt.ja:tt.ko;
+    return `<button class="ts-btn ${active} ${maxed}" onclick="toggleTravelType('${tt.id}')">
+      <span class="ts-emoji">${tt.emoji}</span>
+      <span class="ts-name">${nm}</span>
+    </button>`;
+  }).join('');
+  document.getElementById('types-hint').textContent =
+    currentLang==='en' ? `${selectedTypes.length}/${MAX_TYPE_SEL} selected`
+    : currentLang==='ja' ? `${selectedTypes.length}/${MAX_TYPE_SEL} 選択済み`
+    : `${selectedTypes.length}/${MAX_TYPE_SEL} 선택됨`;
+}
+function toggleTravelType(id){
+  if(selectedTypes.includes(id)){
+    selectedTypes = selectedTypes.filter(t=>t!==id);
+  } else if(selectedTypes.length < MAX_TYPE_SEL){
+    selectedTypes.push(id);
+  }
+  renderTravelTypeGrid();
+}
+
+function generateAndRender(){
+  if(selectedTypes.length===0){
+    alert(currentLang==='en'?'Please select at least one travel type.':currentLang==='ja'?'旅行タイプを1つ以上選んでください。':'여행 유형을 최소 1개 선택해주세요.');
+    return;
+  }
+  const budgetRaw = parseFloat(document.getElementById('budget-input').value) || 50;
+  const budgetKrw = budgetRaw * 10000; // 만원 → 원
+  const result = buildItinerary(plannerNights, selectedTypes, budgetKrw, currentCompanion);
+  renderPlannerResult(result);
+  drawRouteOnMap(result.days);
+}
+
+function buildItinerary(nights, types, budgetKrw, companion){
+  // Filter attractions by type
+  let candidates = ATTRACTIONS.filter(a=>a.types.some(t=>types.includes(t)));
+  candidates.sort((a,b)=>b.priority-a.priority);
+
+  // Budget per night for accommodation (50% of budget)
+  const budgetPerNightKrw = Math.round(budgetKrw * 0.50 / nights);
+  const budgetPerNightJpy = Math.round(budgetPerNightKrw / 9.5);
+
+  // Spots per day
+  const spotsPerDay = companion==='family' ? 3 : 4;
+
+  // Build days by geographic clustering (use area proximity)
+  const used = new Set();
+  const days = [];
+  for(let d=0; d<Math.min(nights,7); d++){
+    const daySpots = [];
+    // Pick anchor = highest priority unused spot
+    const anchor = candidates.find(c=>!used.has(c.id));
+    if(!anchor) break;
+    used.add(anchor.id);
+    daySpots.push(anchor);
+    // Fill from same or nearby areas
+    for(const c of candidates){
+      if(used.has(c.id)) continue;
+      if(daySpots.length >= spotsPerDay) break;
+      if(c.area===anchor.area || isNearbyArea(c.area, anchor.area)){
+        daySpots.push(c);
+        used.add(c.id);
+      }
+    }
+    // Fill remaining slots from any remaining candidate
+    for(const c of candidates){
+      if(used.has(c.id)) continue;
+      if(daySpots.length >= spotsPerDay) break;
+      daySpots.push(c);
+      used.add(c.id);
+    }
+    if(daySpots.length>0) days.push({day:d+1, spots:daySpots, color:DAY_COLORS[d%DAY_COLORS.length]});
+  }
+
+  // Recommend area: score based on type preferences + budget fit
+  const areaScores = {};
+  types.forEach(type=>{
+    const scores = TYPE_AREA_SCORE[type] || {};
+    Object.entries(scores).forEach(([area,score])=>{
+      areaScores[area] = (areaScores[area]||0) + score;
+    });
+  });
+  // Budget fit: find area whose capsule price fits budget
+  const budgetFitArea = AREAS.find(a=>{
+    const cap = a.prices.capsule * 9.5;
+    if(budgetPerNightKrw < 50000) return cap < 4500;
+    if(budgetPerNightKrw < 120000) return cap >= 4000 && cap < 6000;
+    return cap >= 6000;
+  });
+  if(budgetFitArea) areaScores[budgetFitArea.id] = (areaScores[budgetFitArea.id]||0) + 5;
+
+  const sortedAreas = Object.entries(areaScores).sort((a,b)=>b[1]-a[1]);
+  const recAreaId = sortedAreas[0]?.[0] || 'shinjuku';
+  const recArea   = AREAS.find(a=>a.id===recAreaId) || AREAS[0];
+  const recName   = recArea[currentLang] || recArea.ko;
+  const recPriceJpy = recArea.prices.budget;
+
+  return {days, recArea, recName, budgetPerNightJpy, recPriceJpy};
+}
+
+const AREA_PROXIMITY = {
+  shinjuku:['harajuku','shibuya','yoyogi','shinokubo'],
+  shibuya:['shinjuku','harajuku','meguro','ebisu','nakameguro'],
+  harajuku:['shinjuku','shibuya','roppongi'],
+  ueno:['akihabara','asakusa','okachimachi','nippori'],
+  asakusa:['ueno','skytree','akihabara'],
+  ginza:['tokyo','shimbashi','yurakucho'],
+  odaiba:['hamamatsucho','toyosu','shinagawa'],
+  meguro:['ebisu','shibuya','nakameguro'],
+};
+function isNearbyArea(a,b){
+  return (AREA_PROXIMITY[a]||[]).includes(b)||(AREA_PROXIMITY[b]||[]).includes(a);
+}
+
+function renderPlannerResult(result){
+  const {days, recArea, recName, budgetPerNightJpy, recPriceJpy} = result;
+  const t = TR[currentLang];
+  const isLangEn = currentLang==='en', isLangJa = currentLang==='ja';
+  const title   = isLangEn?'Recommended Accommodation':isLangJa?'おすすめ宿泊エリア':'추천 숙소 위치';
+  const subLbl  = isLangEn?'Best area based on your itinerary':isLangJa?'あなたの日程に合ったエリア':'선택한 일정 기준 추천 지역';
+  const priceLbl= isLangEn?'Budget hotel avg.':isLangJa?'ビジネスホテル平均':'비즈니스 호텔 평균';
+
+  const dayCards = days.map(d=>{
+    const zone = d.spots[0]?.(d.spots[0][currentLang]||d.spots[0].ko):'';
+    const steps = d.spots.map((s,i)=>{
+      const sn = s.name[currentLang]||s.name.ko;
+      const sd = s.desc[currentLang]||s.desc.ko;
+      return `<div class="step-row">
+        <div class="step-num" style="background:${d.color}">${i+1}</div>
+        <span class="step-emoji">${s.emoji}</span>
+        <div class="step-body"><div class="step-name">${sn}</div><div class="step-desc">${sd}</div></div>
+      </div>`;
+    }).join('');
+    const dayLbl = isLangEn?`Day ${d.day}`:isLangJa?`${d.day}日目`:`${d.day}일차`;
+    return `<div class="day-card">
+      <div class="day-hd">
+        <div class="day-dot" style="background:${d.color}"></div>
+        <div class="day-title">${dayLbl}</div>
+        <div class="day-zone">${d.spots.length} ${isLangEn?'stops':isLangJa?'スポット':'개 스팟'}</div>
+      </div>
+      <div class="day-stops">${steps}</div>
+    </div>`;
+  }).join('');
+
+  const meta = AREA_META[recArea.id] || {};
+  const why  = currentLang==='en' ? meta.tagEn : currentLang==='ja' ? meta.tagJa : meta.tagKo;
+
+  document.getElementById('pn-result').style.display='block';
+  document.getElementById('pn-result').innerHTML = `
+    <div class="pn-result-hd">✨ ${title}</div>
+    <div class="rec-card">
+      <div class="rec-emoji">${recArea.id==='asakusa'?'⛩️':recArea.id==='shibuya'?'🚶':recArea.id==='shinjuku'?'🌃':'🏨'}</div>
+      <div>
+        <div class="rec-label">${subLbl}</div>
+        <div class="rec-name">${recName}</div>
+        <div class="rec-why">${why||''}</div>
+        <div class="rec-price">${priceLbl}: ${fmt(recPriceJpy)} ${t.perNight}</div>
+      </div>
+    </div>
+    ${dayCards}`;
+}
+
+function drawRouteOnMap(days){
+  routeLayer.clearLayers();
+  days.forEach(day=>{
+    const coords = day.spots.map(s=>s.coords);
+    if(coords.length<2) return;
+    // Draw polyline
+    L.polyline(coords,{color:day.color,weight:3,opacity:.85,dashArray:'6 4'}).addTo(routeLayer);
+    // Arrow markers at midpoints
+    for(let i=0;i<coords.length-1;i++){
+      const [lat1,lng1]=coords[i], [lat2,lng2]=coords[i+1];
+      const mLat=(lat1+lat2)/2, mLng=(lng1+lng2)/2;
+      const ang = Math.atan2(lat2-lat1, lng2-lng1)*180/Math.PI - 90;
+      L.marker([mLat,mLng],{
+        icon:L.divIcon({html:`<div style="transform:rotate(${ang}deg);color:${day.color};font-size:14px;line-height:1;opacity:.9">▼</div>`,className:'',iconSize:[14,14],iconAnchor:[7,7]}),
+        interactive:false, zIndexOffset:100
+      }).addTo(routeLayer);
+    }
+    // Bubble markers per stop
+    coords.forEach((c,i)=>{
+      const s  = day.spots[i];
+      const sn = s.name[currentLang]||s.name.ko;
+      const icon = L.divIcon({
+        html:`<div class="rb-wrap"><div class="rb-num" style="background:${day.color}">${i+1}</div><span class="rb-text">${s.emoji} ${sn}</span></div>`,
+        className:'', iconSize:[null,28], iconAnchor:[10,14]
+      });
+      L.marker(c,{icon, zIndexOffset:500}).addTo(routeLayer);
+    });
+  });
+  // Fit map to route
+  if(days.length>0){
+    const all = days.flatMap(d=>d.spots.map(s=>s.coords));
+    map.fitBounds(L.latLngBounds(all).pad(.15));
+  }
+}
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+applyLang();
+updateTypeRanges();
+renderSubwayList();
+renderConnections();
+renderMap();
+</script>
+</body>
+</html>

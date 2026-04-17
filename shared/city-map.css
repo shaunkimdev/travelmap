@@ -1,0 +1,228 @@
+/**
+ * TravelMap — City Map Shared Styles
+ * Used by all city map pages. Import after design-system.css.
+ * Override --accent in the page's own <style> block.
+ */
+
+/* ── LAYOUT ── */
+body { height:100dvh; display:flex; flex-direction:column; overflow:hidden }
+
+/* ── HEADER ── */
+header {
+  height:58px;
+  background:rgba(11,14,26,.97);
+  border-bottom:1px solid var(--border);
+  display:flex; align-items:center;
+  padding:0 16px; gap:12px;
+  flex-shrink:0; z-index:1000;
+  backdrop-filter:blur(16px);
+}
+.h-back {
+  display:inline-flex; align-items:center; gap:5px;
+  background:var(--raised); border:1px solid var(--border2);
+  border-radius:var(--r-md);
+  padding:5px 10px;
+  font-size:.72rem; font-weight:600; color:var(--text2);
+  text-decoration:none; transition:all 140ms;
+  flex-shrink:0; white-space:nowrap;
+}
+.h-back:hover { color:var(--text); border-color:var(--border3); background:var(--overlay) }
+.h-back .material-symbols-outlined { font-size:14px }
+.h-city  { display:flex; align-items:center; gap:8px }
+.h-logo  { font-size:1.45rem; line-height:1; flex-shrink:0 }
+.h-title { font-size:.9rem; font-weight:800; color:var(--text); letter-spacing:-.01em; white-space:nowrap }
+.h-sub   { font-size:.58rem; color:var(--text3); margin-top:1px }
+.h-hint  { font-size:.6rem; color:var(--text3); line-height:1.6; white-space:nowrap }
+.h-divider { width:1px; height:22px; background:var(--border); flex-shrink:0 }
+.h-controls { margin-left:auto; display:flex; gap:6px; align-items:center }
+
+/* ── MAIN ── */
+.main { display:flex; flex:1; overflow:hidden; position:relative }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width:272px; background:var(--panel);
+  border-right:1px solid var(--border);
+  display:flex; flex-direction:column;
+  overflow-y:auto; flex-shrink:0;
+  transition:width 260ms var(--ease), opacity 220ms;
+  overflow-x:hidden;
+}
+.sidebar.collapsed { width:0; opacity:0; pointer-events:none }
+
+.sb-toggle {
+  position:absolute; top:50%; left:272px;
+  transform:translateY(-50%); z-index:50;
+  width:18px; height:44px;
+  background:var(--panel); border:1px solid var(--border2);
+  border-left:none; border-radius:0 8px 8px 0;
+  cursor:pointer; color:var(--text3); font-size:11px;
+  display:flex; align-items:center; justify-content:center;
+  transition:all 140ms, left 260ms var(--ease);
+}
+.sb-toggle:hover { color:var(--text2); background:var(--raised) }
+
+/* sections */
+.sec { padding:13px 14px; border-bottom:1px solid var(--border) }
+.sec:last-child { border-bottom:none }
+.sec-toggle-btn {
+  margin-left:auto; background:none; border:none;
+  color:var(--text3); cursor:pointer;
+  font-size:.62rem; font-weight:600;
+  font-family:var(--font); transition:color 140ms;
+}
+.sec-toggle-btn:hover { color:var(--text2) }
+
+/* area count chip */
+.area-count {
+  margin-left:auto; font-size:.59rem;
+  background:rgba(255,255,255,.05);
+  border:1px solid var(--border);
+  padding:1px 7px; border-radius:var(--r-full); color:var(--text3);
+}
+
+/* ── TYPE GRID ── */
+.type-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px }
+.type-btn {
+  background:var(--raised); border:1.5px solid transparent;
+  border-radius:var(--r-md); padding:10px 6px 8px;
+  cursor:pointer; transition:all 180ms;
+  text-align:center; color:var(--text2);
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+}
+.type-btn:hover  { border-color:var(--border2); color:var(--text); background:rgba(255,255,255,.05) }
+.type-btn.active { border-color:var(--accent); color:var(--accent); background:rgba(249,115,22,.08) }
+.type-btn.active { background:color-mix(in srgb, var(--accent) 8%, transparent) }
+.t-picto {
+  width:38px; height:38px;
+  display:flex; align-items:center; justify-content:center;
+  border-radius:9px; background:rgba(255,255,255,.05); transition:all 180ms;
+}
+.type-btn.active .t-picto { background:color-mix(in srgb, var(--accent) 12%, transparent) }
+.t-picto .material-symbols-outlined { font-size:21px }
+.t-name  { font-size:.67rem; font-weight:700; line-height:1.3; color:inherit }
+.t-range { font-size:.57rem; color:var(--text3) }
+.type-btn.active .t-range { color:color-mix(in srgb, var(--accent) 60%, transparent) }
+
+/* ── LEGEND ── */
+.leg-bar {
+  height:9px; border-radius:6px;
+  background:linear-gradient(to right,#22c55e,#84cc16,#eab308,#f97316,#ef4444,#a855f7);
+  margin-bottom:6px;
+}
+.leg-labels { display:flex; justify-content:space-between; font-size:.58rem; color:var(--text3) }
+.leg-items  { margin-top:8px; display:flex; flex-direction:column; gap:4px }
+.leg-row    { display:flex; align-items:center; gap:7px; font-size:.66rem; color:var(--text2) }
+.leg-dot    { width:10px; height:10px; border-radius:3px; flex-shrink:0 }
+
+/* ── NOTES ── */
+.notes { list-style:none; font-size:.65rem; color:var(--text3); line-height:2.2 }
+.notes li::before { content:'· '; color:var(--accent) }
+
+/* ── SUBWAY ── */
+.subway-body { display:none }
+.subway-body.open { display:block }
+.sl-item { display:flex; align-items:center; gap:8px; padding:5px 0; border-bottom:1px solid var(--border) }
+.sl-item:last-child { border-bottom:none }
+.sl-swatch { width:24px; height:5px; border-radius:3px; flex-shrink:0 }
+.sl-name   { flex:1; font-size:.65rem; font-weight:600; color:var(--text2); line-height:1.3 }
+.sl-org    { font-size:.57rem; font-weight:400; color:var(--text3); display:block; margin-top:1px }
+
+/* ── MAP ── */
+#map { flex:1 }
+
+/* ── LEAFLET DARK ── */
+.leaflet-popup-content-wrapper {
+  border-radius:16px!important; padding:0!important;
+  background:#111827!important;
+  border:1px solid rgba(255,255,255,.1)!important;
+  box-shadow:0 20px 56px rgba(0,0,0,.7)!important;
+}
+.leaflet-popup-content { margin:0!important; padding:16px!important }
+.leaflet-popup-tip     { background:#111827!important }
+.leaflet-popup-tip-container { display:none }
+.leaflet-control-zoom  { border:1px solid var(--border2)!important }
+.leaflet-control-zoom a { background:var(--panel)!important; color:var(--text2)!important; border-bottom:1px solid var(--border)!important }
+.leaflet-control-zoom a:hover { background:var(--raised)!important; color:var(--text)!important }
+.leaflet-bar { box-shadow:var(--sh-md)!important }
+
+/* ── POPUP ── */
+.pu-wrap { font-family:var(--font); min-width:256px }
+.pu-head { display:flex; align-items:flex-start; gap:10px; margin-bottom:10px }
+.pu-picto {
+  width:46px; height:46px; border-radius:12px;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+.pu-picto .material-symbols-outlined { font-size:26px; color:#fff }
+.pu-name { font-weight:800; font-size:.94rem; color:var(--text); line-height:1.3 }
+.pu-sub  { font-size:.59rem; color:var(--text3); margin-top:2px }
+.pu-badge {
+  display:inline-block;
+  background:color-mix(in srgb,var(--accent) 18%,transparent);
+  color:color-mix(in srgb,var(--accent) 90%,#fff);
+  font-size:.55rem; padding:1px 6px; border-radius:var(--r-full);
+  font-weight:700; vertical-align:middle; margin-left:4px;
+  border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);
+}
+.pu-tags { display:flex; flex-wrap:wrap; gap:3px; margin-bottom:8px }
+.pu-tag  { background:rgba(255,255,255,.06); color:var(--text2); padding:2px 7px; border-radius:7px; font-size:.61rem }
+.pu-table { border:1px solid rgba(255,255,255,.08); border-radius:10px; overflow:hidden; margin-bottom:10px }
+.pu-row {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:6px 10px; border-bottom:1px solid rgba(255,255,255,.05); font-size:.72rem;
+}
+.pu-row:last-child { border-bottom:none }
+.pu-row.pu-active  { background:color-mix(in srgb,var(--accent) 8%,transparent) }
+.pu-label { color:var(--text2); display:flex; align-items:center; gap:5px }
+.pu-val   { font-weight:800; color:color-mix(in srgb,var(--accent) 85%,#fff) }
+.pu-night { font-size:.58rem; color:var(--text3); font-weight:400 }
+.pu-na    { font-size:.68rem; color:var(--text3) }
+.pu-btns  { display:flex; gap:5px }
+.pu-btn {
+  flex:1; padding:7px 4px; border:none; border-radius:8px;
+  font-size:.69rem; font-weight:700; cursor:pointer;
+  text-decoration:none; text-align:center;
+  transition:all 140ms; display:flex; align-items:center; justify-content:center; gap:4px;
+}
+.pu-btn:hover { filter:brightness(1.15); transform:translateY(-1px) }
+.pu-google  { background:#4285f4; color:#fff }
+.pu-booking { background:#003580; color:#fff }
+
+/* ── AREA LABELS ── */
+.area-label {
+  background:rgba(9,13,26,.9);
+  border:1.5px solid rgba(255,255,255,.12);
+  border-radius:14px; padding:8px 14px 7px;
+  font-family:var(--font); color:var(--text);
+  white-space:nowrap; cursor:grab;
+  transition:all 200ms var(--ease);
+  box-shadow:0 4px 18px rgba(0,0,0,.55);
+  backdrop-filter:blur(10px);
+  pointer-events:auto; text-align:center; user-select:none;
+}
+.area-label:active { cursor:grabbing }
+.area-label:hover  { transform:scale(1.07); box-shadow:0 8px 30px rgba(0,0,0,.7) }
+.al-icons { display:flex; gap:6px; justify-content:center; margin-bottom:5px }
+.al-icons .material-symbols-outlined { font-size:28px; transition:transform .2s }
+.area-label:hover .al-icons .material-symbols-outlined { transform:scale(1.12) }
+.al-name    { font-size:22px; font-weight:900; line-height:1.1; letter-spacing:-.02em; color:var(--text) }
+.al-tagline { font-size:10.5px; color:rgba(238,242,248,.5); margin-top:4px; font-weight:500; line-height:1.4; white-space:normal; max-width:186px; word-break:keep-all }
+
+/* ── SUBWAY TOOLTIP ── */
+.subway-tip {
+  background:rgba(9,13,26,.92)!important;
+  border:1px solid rgba(255,255,255,.12)!important;
+  color:var(--text)!important; font-size:11px; font-weight:700;
+  padding:3px 9px; border-radius:7px;
+  box-shadow:0 2px 12px rgba(0,0,0,.5)!important; white-space:nowrap;
+}
+.subway-tip::before { display:none!important }
+
+/* ── MOBILE ── */
+@media(max-width:768px){
+  .main    { flex-direction:column-reverse }
+  .sidebar { width:100%!important; opacity:1!important; max-height:42vh; border-right:none; border-top:1px solid var(--border); pointer-events:auto!important }
+  #map     { flex:1; min-height:58vh }
+  .h-sub, .h-hint { display:none }
+  .sb-toggle { display:none }
+}

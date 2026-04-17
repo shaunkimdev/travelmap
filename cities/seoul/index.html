@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>서울 숙박 가격 지도 | Seoul Accommodation Map</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,1,0"/>
+<link rel="stylesheet" href="../../shared/design-system.css"/>
+<link rel="stylesheet" href="../../shared/city-map.css"/>
+<link rel="stylesheet" href="../../shared/city-features.css"/>
+<style>:root{--accent:#3b82f6;}</style>
+</head>
+<body>
+<header>
+  <a class="h-back" href="../../index.html">
+    <span class="material-symbols-outlined">arrow_back</span>
+    도시 목록
+  </a>
+  <div class="h-divider"></div>
+  <div class="h-city">
+    <span class="h-logo">🏙️</span>
+    <div>
+      <div class="h-title" id="h-title">서울 숙박 가격 지도</div>
+      <div class="h-sub"   id="h-sub">위치별 평균 숙박 요금 · Booking.com 기준</div>
+    </div>
+  </div>
+  <div class="h-divider"></div>
+  <div class="h-hint" id="h-hint">지역 클릭 → 상세 가격 확인 / ★ = 추천</div>
+  <div class="h-controls">
+    <div class="toggle-group">
+      <button class="tg-btn active" id="lang-ko" onclick="setLang('ko')">한국어</button>
+      <button class="tg-btn"        id="lang-en" onclick="setLang('en')">EN</button>
+      <button class="tg-btn"        id="lang-ja" onclick="setLang('ja')">日本語</button>
+    </div>
+    <div class="toggle-group">
+      <button class="tg-btn active" id="btn-krw" onclick="setCur('KRW')">₩ KRW</button>
+      <button class="tg-btn"        id="btn-jpy" onclick="setCur('JPY')">¥ JPY</button>
+      <button class="tg-btn"        id="btn-usd" onclick="setCur('USD')">$ USD</button>
+    </div>
+    <button class="planner-btn" onclick="openPlanner()"><span class="material-symbols-outlined">explore</span><span id="planner-btn-label">여행 플래너</span></button>
+  </div>
+</header>
+<div class="main">
+  <button class="sb-toggle" id="sb-toggle" onclick="toggleSidebar()">‹</button>
+  <div class="sidebar" id="sidebar">
+    <div class="sec">
+      <div class="sec-title">
+        <span id="sec-type">숙박 유형 선택</span>
+        <span class="area-count" id="area-count">12개 지역</span>
+      </div>
+      <div class="type-grid">
+        <button class="type-btn active" onclick="setType('capsule')" id="tab-capsule">
+          <div class="t-picto"><span class="material-symbols-outlined">bedroom_parent</span></div>
+          <span class="t-name" id="tn-capsule">캡슐호텔</span>
+          <span class="t-range" id="tr-capsule"></span>
+        </button>
+        <button class="type-btn" onclick="setType('hostel')" id="tab-hostel">
+          <div class="t-picto"><span class="material-symbols-outlined">backpack</span></div>
+          <span class="t-name" id="tn-hostel">호스텔/게하</span>
+          <span class="t-range" id="tr-hostel"></span>
+        </button>
+        <button class="type-btn" onclick="setType('budget')" id="tab-budget">
+          <div class="t-picto"><span class="material-symbols-outlined">apartment</span></div>
+          <span class="t-name" id="tn-budget">비즈니스 ★★</span>
+          <span class="t-range" id="tr-budget"></span>
+        </button>
+        <button class="type-btn" onclick="setType('standard')" id="tab-standard">
+          <div class="t-picto"><span class="material-symbols-outlined">hotel</span></div>
+          <span class="t-name" id="tn-standard">스탠다드 ★★★</span>
+          <span class="t-range" id="tr-standard"></span>
+        </button>
+        <button class="type-btn" onclick="setType('premium')" id="tab-premium">
+          <div class="t-picto"><span class="material-symbols-outlined">star</span></div>
+          <span class="t-name" id="tn-premium">프리미엄 ★★★★</span>
+          <span class="t-range" id="tr-premium"></span>
+        </button>
+        <button class="type-btn" onclick="setType('luxury')" id="tab-luxury">
+          <div class="t-picto"><span class="material-symbols-outlined">diamond</span></div>
+          <span class="t-name" id="tn-luxury">럭셔리 ★★★★★</span>
+          <span class="t-range" id="tr-luxury"></span>
+        </button>
+      </div>
+    </div>
+    <div class="sec">
+      <div class="sec-title" id="sec-legend">가격 색상 기준</div>
+      <div class="leg-bar"></div>
+      <div class="leg-labels"><span id="ll0">저렴</span><span id="ll1">보통</span><span id="ll2">비쌈</span><span id="ll3">고급</span></div>
+      <div class="leg-items">
+        <div class="leg-row"><div class="leg-dot" style="background:#22c55e"></div><span id="lc0">매우 저렴</span></div>
+        <div class="leg-row"><div class="leg-dot" style="background:#84cc16"></div><span id="lc1">저렴</span></div>
+        <div class="leg-row"><div class="leg-dot" style="background:#eab308"></div><span id="lc2">보통</span></div>
+        <div class="leg-row"><div class="leg-dot" style="background:#f97316"></div><span id="lc3">약간 비쌈</span></div>
+        <div class="leg-row"><div class="leg-dot" style="background:#ef4444"></div><span id="lc4">비쌈</span></div>
+        <div class="leg-row"><div class="leg-dot" style="background:#a855f7"></div><span id="lc5">럭셔리</span></div>
+      </div>
+    </div>
+    <div class="sec">
+      <div class="sec-title" id="sec-notes">안내사항</div>
+      <ul class="notes">
+        <li id="nt0">절대적인 수치 아님 (참고용)</li>
+        <li id="nt1">Booking.com 평균가 기준</li>
+        <li id="nt2">성수기·이벤트 시 변동 큼</li>
+        <li id="nt3">별(★)은 추천 숙박 위치</li>
+        <li id="nt4">최종 업데이트 2024/08</li>
+      </ul>
+    </div>
+    <div class="sec">
+      <div class="sec-title">
+        <span id="sec-subway">🚇 지하철 노선</span>
+        <button class="sec-toggle-btn" id="subway-toggle-btn" onclick="toggleSubway()">펼치기</button>
+      </div>
+      <div id="subway-list" class="subway-body"></div>
+    </div>
+    <div class="sec">
+      <div class="sec-title" id="sec-companion">👥 동행 유형</div>
+      <div class="comp-grid">
+        <button class="comp-btn active" id="comp-solo"    onclick="setCompanion('solo')">   <span class="comp-emoji">🧍</span><span class="comp-label" id="cl-solo">혼자</span></button>
+        <button class="comp-btn"        id="comp-couple"  onclick="setCompanion('couple')"> <span class="comp-emoji">👫</span><span class="comp-label" id="cl-couple">커플</span></button>
+        <button class="comp-btn"        id="comp-friends" onclick="setCompanion('friends')"><span class="comp-emoji">👯</span><span class="comp-label" id="cl-friends">친구들</span></button>
+        <button class="comp-btn"        id="comp-family"  onclick="setCompanion('family')"> <span class="comp-emoji">👨‍👩‍👧</span><span class="comp-label" id="cl-family">가족</span></button>
+      </div>
+    </div>
+    <div class="sec">
+      <div class="sec-title" id="sec-overlays">🗺️ 지도 레이어</div>
+      <div class="ovl-grid">
+        <button class="ovl-btn" id="ovl-attr"    onclick="toggleAttractions()"><span class="ovl-pip"></span><span id="ol-attr">명소 표시</span></button>
+        <button class="ovl-btn" id="ovl-airport" onclick="toggleAirports()">  <span class="ovl-pip"></span><span id="ol-airport">공항 접근</span></button>
+      </div>
+    </div>
+  </div>
+  <div id="map"></div>
+</div>
+
+<!-- PLANNER OVERLAY -->
+<div class="planner-overlay" id="planner-overlay" onclick="if(event.target===this)closePlanner()">
+  <div class="planner-panel">
+    <div class="pn-head">
+      <div class="pn-head-title"><span class="material-symbols-outlined" style="font-size:16px;">explore</span><span id="pn-title">서울 여행 플래너</span></div>
+      <button class="pn-close" onclick="closePlanner()">✕</button>
+    </div>
+    <div class="pn-body">
+      <div class="pn-section">
+        <div class="pn-sec-label" id="pn-nights-label">여행 기간</div>
+        <div class="nights-row">
+          <div class="nights-stepper">
+            <button class="ns-btn" onclick="changeNights(-1)">−</button>
+            <div class="ns-val" id="pn-nights-val">3</div>
+            <button class="ns-btn" onclick="changeNights(1)">＋</button>
+          </div>
+          <span class="nights-suffix" id="pn-nights-suffix">박</span>
+        </div>
+      </div>
+      <div class="pn-section">
+        <div class="pn-sec-label" id="pn-type-label">여행 유형 <span style="font-weight:400;text-transform:none;letter-spacing:0;">(최대 3개)</span></div>
+        <div class="types-sel-grid" id="pn-type-grid"></div>
+        <div class="types-hint" id="pn-type-hint">0 / 3 선택됨</div>
+      </div>
+      <div class="pn-section">
+        <div class="pn-sec-label" id="pn-budget-label">예산 (항공료 제외)</div>
+        <div class="budget-row">
+          <input class="budget-input" type="number" id="pn-budget" placeholder="300000" min="0" step="10000"/>
+          <span class="budget-suffix" id="pn-budget-suffix">KRW / 1인</span>
+        </div>
+      </div>
+      <button class="pn-gen-btn" onclick="generateAndRender()">
+        <span class="material-symbols-outlined">auto_awesome</span>
+        <span id="pn-gen-label">플랜 생성하기</span>
+      </button>
+      <div id="pn-result"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const TR = {
+  ko:{title:'서울 숙박 가격 지도',sub:'위치별 평균 숙박 요금 · Booking.com 기준',hint:'지역 클릭 → 상세 가격 확인 / ★ = 추천',secType:'숙박 유형 선택',secLegend:'가격 색상 기준',secNotes:'안내사항',secSubway:'🚇 지하철 노선',types:{capsule:'캡슐호텔',hostel:'호스텔/게하',budget:'비즈니스 ★★',standard:'스탠다드 ★★★',premium:'프리미엄 ★★★★',luxury:'럭셔리 ★★★★★'},legLabels:['저렴','보통','비쌈','고급'],legColors:['매우 저렴','저렴','보통','약간 비쌈','비쌈','럭셔리'],notes:['절대적인 수치 아님 (참고용)','Booking.com 평균가 기준','성수기·이벤트 시 변동 큼','별(★)은 추천 숙박 위치','최종 업데이트 2024/08'],rec:'추천',perNight:'/박',avgPrice:'평균 숙박 가격 (1박 · 2인 기준)',unit:'개 지역',na:'해당 없음',expand:'펼치기',collapse:'접기'},
+  en:{title:'Seoul Accommodation Map',sub:'Average room rates by area · Based on Booking.com',hint:'Click area → See prices / ★ = Recommended',secType:'Accommodation Type',secLegend:'Price Color Guide',secNotes:'Notes',secSubway:'🚇 Subway Lines',types:{capsule:'Capsule Hotel',hostel:'Hostel/Guesthouse',budget:'Business ★★',standard:'Standard ★★★',premium:'Premium ★★★★',luxury:'Luxury ★★★★★'},legLabels:['Cheap','Mid','Exp','Luxury'],legColors:['Very Cheap','Cheap','Moderate','Slightly Exp.','Expensive','Luxury'],notes:['Approximate figures only','Based on Booking.com averages','Prices vary by season/events','★ = Recommended area','Last updated 2024/08'],rec:'Rec',perNight:'/night',avgPrice:'Avg. price per night (2 guests)',unit:' areas',na:'N/A',expand:'Show',collapse:'Hide'},
+  ja:{title:'ソウル宿泊価格マップ',sub:'エリア別平均宿泊料金 · Booking.com基準',hint:'エリアをクリック → 詳細価格 / ★ = おすすめ',secType:'宿泊タイプ',secLegend:'価格カラー基準',secNotes:'注意事項',secSubway:'🚇 地下鉄路線',types:{capsule:'カプセルホテル',hostel:'ホステル',budget:'ビジネス ★★',standard:'スタンダード ★★★',premium:'プレミアム ★★★★',luxury:'ラグジュアリー ★★★★★'},legLabels:['安い','普通','高い','高級'],legColors:['格安','安い','普通','やや高い','高い','高級'],notes:['参考値のみ','Booking.com平均価格基準','シーズンにより変動あり','★はおすすめエリア','最終更新 2024/08'],rec:'おすすめ',perNight:'/泊',avgPrice:'1泊平均価格（2名）',unit:'エリア',na:'なし',expand:'開く',collapse:'閉じる'},
+};
+
+const AREAS = [
+  {id:'myeongdong',ko:'명동',en:'Myeongdong',ja:'明洞',coords:[37.5636,126.9836],rec:true,icon:'shopping_bag',sKo:['명동 성당','남대문 시장','롯데백화점 명동','명동 먹거리 골목'],sEn:['Myeongdong Cathedral','Namdaemun Market','Lotte Dept. Store','Street Food Alley'],sJa:['明洞聖堂','南大門市場','ロッテ百貨店 明洞','明洞屋台グルメ路地'],prices:{capsule:28000,hostel:30000,budget:75000,standard:130000,premium:220000,luxury:450000},radius:600},
+  {id:'hongdae',ko:'홍대',en:'Hongdae',ja:'弘大',coords:[37.5563,126.9236],rec:true,icon:'music_note',sKo:['홍대 거리','경의선 책거리','홍대 클럽 거리','연남동 카페 거리'],sEn:['Hongdae Street','Gyeongui Line Forest Park','Club Street','Yeonnam-dong Café Strip'],sJa:['弘大ストリート','京義線ブックストリート','クラブ街','延南洞カフェ通り'],prices:{capsule:25000,hostel:28000,budget:65000,standard:110000,premium:190000,luxury:380000},radius:700},
+  {id:'gangnam',ko:'강남',en:'Gangnam',ja:'江南',coords:[37.4979,127.0276],rec:true,icon:'business_center',sKo:['강남역 사거리','COEX 몰','압구정 로데오','청담 명품거리'],sEn:['Gangnam Station Intersection','COEX Mall','Apgujeong Rodeo St.','Cheongdam Luxury Strip'],sJa:['江南駅交差点','COEXモール','狎鴎亭ロデオ通り','清潭ラグジュアリー街'],prices:{capsule:null,hostel:40000,budget:90000,standard:160000,premium:300000,luxury:600000},radius:800},
+  {id:'itaewon',ko:'이태원',en:'Itaewon',ja:'梨泰院',coords:[37.5345,126.9940],rec:true,icon:'nightlife',sKo:['이태원 메인 스트리트','경리단길','해방촌','한남동 갤러리'],sEn:['Itaewon Main Street','Gyeongnidan-gil','Haebangchon (HBC)','Hannam-dong Gallery District'],sJa:['梨泰院メインストリート','キョンリダンギル','ヘバンチョン','漢南洞ギャラリー地区'],prices:{capsule:25000,hostel:30000,budget:70000,standard:120000,premium:210000,luxury:420000},radius:600},
+  {id:'insadong',ko:'인사동·종로',en:'Insadong / Jongno',ja:'仁寺洞·鍾路',coords:[37.5743,126.9850],rec:true,icon:'palette',sKo:['인사동 거리','경복궁','북촌 한옥마을','창덕궁'],sEn:['Insadong Street','Gyeongbokgung Palace','Bukchon Hanok Village','Changdeokgung Palace'],sJa:['仁寺洞通り','景福宮','北村韓屋村','昌徳宮'],prices:{capsule:22000,hostel:27000,budget:68000,standard:115000,premium:195000,luxury:380000},radius:650},
+  {id:'dongdaemun',ko:'동대문',en:'Dongdaemun',ja:'東大門',coords:[37.5665,127.0091],rec:true,icon:'storefront',sKo:['DDP (동대문 디자인 플라자)','동대문 시장','광장 시장','흥인지문'],sEn:['DDP (Dongdaemun Design Plaza)','Dongdaemun Market','Gwangjang Market','Heunginjimun Gate'],sJa:['DDP（東大門デザインプラザ）','東大門市場','広蔵市場','興仁之門'],prices:{capsule:23000,hostel:28000,budget:65000,standard:110000,premium:185000,luxury:360000},radius:650},
+  {id:'sinchon',ko:'신촌',en:'Sinchon',ja:'新村',coords:[37.5551,126.9368],rec:false,icon:'school',sKo:['신촌 로터리','연세대학교','이화여자대학교','신촌 먹자골목'],sEn:['Sinchon Rotary','Yonsei University','Ewha Womans University','Sinchon Food Alley'],sJa:['新村ロータリー','延世大学校','梨花女子大学校','新村グルメ横丁'],prices:{capsule:20000,hostel:25000,budget:58000,standard:100000,premium:170000,luxury:null},radius:500},
+  {id:'gwanghwamun',ko:'광화문',en:'Gwanghwamun',ja:'光化門',coords:[37.5759,126.9769],rec:true,icon:'account_balance',sKo:['광화문 광장','경복궁','청계천','세종문화회관'],sEn:['Gwanghwamun Plaza','Gyeongbokgung Palace','Cheonggyecheon Stream','Sejong Center for the Performing Arts'],sJa:['光化門広場','景福宮','清渓川','世宗文化会館'],prices:{capsule:null,hostel:35000,budget:80000,standard:140000,premium:240000,luxury:500000},radius:600},
+  {id:'euljiro',ko:'을지로',en:'Euljiro',ja:'乙支路',coords:[37.5658,126.9917],rec:false,icon:'local_bar',sKo:['을지로 힙스터 골목','청계천 을지로 구간','세운상가','을지로 노포 골목'],sEn:['Euljiro Hipster Alley','Cheonggyecheon (Euljiro Section)','Sewoon Shopping Complex','Old-School Bar Alley'],sJa:['乙支路ヒップスター路地','清渓川（乙支路区間）','世運商店街','乙支路レトロ居酒屋路地'],prices:{capsule:22000,hostel:28000,budget:65000,standard:105000,premium:175000,luxury:350000},radius:550},
+  {id:'jamsil',ko:'잠실',en:'Jamsil',ja:'蚕室',coords:[37.5131,127.1000],rec:false,icon:'stadium',sKo:['롯데월드 타워','롯데월드 어드벤처','석촌호수','올림픽 주경기장'],sEn:['Lotte World Tower','Lotte World Adventure','Seokchon Lake','Olympic Main Stadium'],sJa:['ロッテワールドタワー','ロッテワールドアドベンチャー','石村湖','オリンピックメインスタジアム'],prices:{capsule:null,hostel:38000,budget:80000,standard:140000,premium:240000,luxury:480000},radius:700},
+  {id:'jongno3ga',ko:'종로3가·탑골',en:'Jongno 3-ga / Tapgol',ja:'鍾路3街·탑골',coords:[37.5712,126.9926],rec:false,icon:'temple_buddhist',sKo:['탑골 공원','종묘','익선동 한옥 골목','낙원 상가'],sEn:['Tapgol Park','Jongmyo Shrine','Ikseon-dong Hanok Alley','Nakwon Arcade'],sJa:['タプコル公園','宗廟','益善洞韓屋路地','楽園商店街'],prices:{capsule:20000,hostel:25000,budget:60000,standard:100000,premium:165000,luxury:null},radius:500},
+  {id:'seoulstation',ko:'서울역',en:'Seoul Station',ja:'ソウル駅',coords:[37.5547,126.9706],rec:true,icon:'directions_railway',sKo:['서울역 (KTX·공항철도)','숭례문 (남대문)','서울로 7017','만리동 광장'],sEn:['Seoul Station (KTX/AREX)','Sungnyemun (Namdaemun Gate)','Seoullo 7017 Skywalk','Malli-dong Square'],sJa:['ソウル駅（KTX·空港鉄道）','崇礼門（南大門）','ソウロ7017スカイウォーク','万里洞広場'],prices:{capsule:25000,hostel:30000,budget:70000,standard:120000,premium:200000,luxury:400000},radius:600},
+];
+
+const AREA_META = {
+  myeongdong:{tagKo:'쇼핑·뷰티·길거리 음식의 1번지',tagEn:"Seoul's #1 shopping, beauty & street-food hub",tagJa:'ショッピング·コスメ·屋台グルメの聖地',icons:['shopping_bag','spa','local_dining']},
+  hongdae:{tagKo:'젊음과 예술·클럽 문화의 중심지',tagEn:'Youth culture, indie arts & legendary club scene',tagJa:'若者文化·インディーアート·クラブシーンの中心',icons:['music_note','palette','nightlife']},
+  gangnam:{tagKo:'럭셔리 쇼핑·비즈니스·미식의 고급 지구',tagEn:'Upscale business, luxury retail & fine dining',tagJa:'ラグジュアリーショッピング·ビジネス·グルメの高級地区',icons:['business_center','shopping_bag','restaurant']},
+  itaewon:{tagKo:'다국적 문화·나이트라이프·이색 맛집',tagEn:'Multicultural dining, nightlife & global village vibe',tagJa:'多国籍グルメ·ナイトライフ·コスモポリタンな街',icons:['nightlife','local_dining','public']},
+  insadong:{tagKo:'전통 공예·갤러리·한국 차 문화의 거리',tagEn:'Traditional crafts, galleries & Korean tea culture',tagJa:'伝統工芸·ギャラリー·韓国茶文化の通り',icons:['palette','temple_buddhist','local_cafe']},
+  dongdaemun:{tagKo:'24시간 패션 도매·디자인 랜드마크',tagEn:'24-hour fashion wholesale & design landmark',tagJa:'24時間ファッション卸売·デザインランドマーク',icons:['storefront','local_mall','design_services']},
+  sinchon:{tagKo:'대학가 활기·저렴한 먹거리·청년 문화',tagEn:'Vibrant university district with budget dining',tagJa:'大学街の活気·格安グルメ·若者文化',icons:['school','local_dining','sports_bar']},
+  gwanghwamun:{tagKo:'조선 왕조 유산·정치 중심·도심 광장',tagEn:'Joseon royal heritage, civic plaza & political heart',tagJa:'朝鮮王朝遺産·政治中心地·市民広場',icons:['account_balance','fort','park']},
+  euljiro:{tagKo:'레트로 감성·힙한 술집·공예 골목',tagEn:'Retro vibes, trendy bars & artisan workshops',tagJa:'レトロ感性·おしゃれバー·職人工房が並ぶ路地',icons:['local_bar','handyman','palette']},
+  jamsil:{tagKo:'롯데월드·한강·올림픽 스포츠 복합지구',tagEn:'Lotte World Tower, Han River & Olympic sports complex',tagJa:'ロッテワールドタワー·漢江·五輪スポーツ複合地区',icons:['stadium','attractions','water']},
+  jongno3ga:{tagKo:'전통 사찰·익선동 힙스터·낙원 악기상가',tagEn:'Historic shrines, Ikseon hipster alley & music arcade',tagJa:'歴史的寺院·益善洞ヒップスター路地·楽器街',icons:['temple_buddhist','music_note','history']},
+  seoulstation:{tagKo:'KTX·공항철도 환승 허브·관광 접근성 최우수',tagEn:'KTX & AREX transit hub with best tourist connectivity',tagJa:'KTX·空港鉄道の交通ハブ·観光アクセス最優秀',icons:['directions_railway','connecting_airports','luggage']},
+};
+const AREA_COLORS = {myeongdong:'#E74C3C',hongdae:'#9B59B6',gangnam:'#2C3E50',itaewon:'#E67E22',insadong:'#27AE60',dongdaemun:'#F39C12',sinchon:'#1ABC9C',gwanghwamun:'#2980B9',euljiro:'#8E44AD',jamsil:'#16A085',jongno3ga:'#D35400',seoulstation:'#7F8C8D'};
+const LABEL_OFFSETS = {myeongdong:{off:[0.005,0.012],dir:'ne'},hongdae:{off:[0.005,-0.013],dir:'nw'},gangnam:{off:[-0.007,0.012],dir:'se'},itaewon:{off:[-0.006,0.013],dir:'se'},insadong:{off:[0.006,-0.013],dir:'nw'},dongdaemun:{off:[0.006,0.012],dir:'ne'},sinchon:{off:[0.005,-0.012],dir:'nw'},gwanghwamun:{off:[0.006,-0.012],dir:'nw'},euljiro:{off:[-0.006,-0.012],dir:'sw'},jamsil:{off:[0.006,0.012],dir:'ne'},jongno3ga:{off:[0.006,0.000],dir:'n'},seoulstation:{off:[-0.006,-0.012],dir:'sw'}};
+const AREA_CONNECTIONS = [
+  {ko:'1호선',en:'Line 1',ja:'1号線',color:'#0052A4',weight:4,coords:[[37.5547,126.9706],[37.5600,126.9752],[37.5700,126.9820],[37.5712,126.9926],[37.5715,127.0090],[37.5700,127.0180]]},
+  {ko:'2호선',en:'Line 2',ja:'2号線',color:'#00A84D',weight:6,coords:[[37.5551,126.9368],[37.5563,126.9236],[37.5547,126.9706],[37.5638,126.9769],[37.5712,126.9926],[37.5670,127.0091],[37.5455,127.0555],[37.5131,127.1000],[37.4979,127.0276],[37.5017,127.0238],[37.4963,126.9270],[37.5099,126.8951],[37.5390,126.8960],[37.5563,126.9236]]},
+  {ko:'4호선',en:'Line 4',ja:'4号線',color:'#00A5DE',weight:4,coords:[[37.5547,126.9706],[37.5565,126.9771],[37.5636,126.9836],[37.5700,126.9820],[37.5665,127.0091],[37.5836,127.0045],[37.6101,127.0040]]},
+  {ko:'5호선',en:'Line 5',ja:'5号線',color:'#996CAC',weight:4,coords:[[37.5756,126.9769],[37.5700,126.9900],[37.5665,127.0091],[37.5600,127.0390],[37.5454,127.0575],[37.5131,127.1000],[37.5060,127.1220]]},
+  {ko:'경의중앙선',en:'Gyeongui-Jungang Line',ja:'京義中央線',color:'#77C4A3',weight:3,coords:[[37.5800,126.8900],[37.5700,126.8990],[37.5563,126.9236],[37.5551,126.9368],[37.5547,126.9706],[37.5600,126.9900],[37.5800,127.0450]]},
+  {ko:'9호선',en:'Line 9',ja:'9号線',color:'#BDB000',weight:3,coords:[[37.5620,126.8010],[37.5530,126.8480],[37.5490,126.8760],[37.5390,126.8960],[37.5260,126.9230],[37.5238,126.9510],[37.5050,127.0050],[37.5040,127.0240],[37.4979,127.0276],[37.5131,127.1000]]},
+  {ko:'신분당선',en:'Sinbundang Line',ja:'新盆唐線',color:'#D4003B',weight:3,coords:[[37.5040,127.0240],[37.4979,127.0276],[37.4950,127.0300],[37.4720,127.0390],[37.3940,127.1110],[37.3710,127.1070]]},
+  {ko:'공항철도 (AREX)',en:'Airport Railroad Express (AREX)',ja:'空港鉄道',color:'#4A90C4',weight:4,coords:[[37.4490,126.4510],[37.4600,126.4820],[37.5230,126.7290],[37.5500,126.7870],[37.5560,126.8480],[37.5563,126.9236],[37.5551,126.9368],[37.5547,126.9706]]},
+];
+
+/* ── NEW FEATURE DATA ── */
+const ATTRACTIONS = [
+  {id:'gyeongbokgung',emoji:'🏯',type:'landmark',area:'insadong',ko:'경복궁',en:'Gyeongbokgung Palace',ja:'景福宮',lat:37.5796,lng:126.9770},
+  {id:'bukchon',emoji:'🏘️',type:'local',area:'insadong',ko:'북촌 한옥마을',en:'Bukchon Hanok Village',ja:'北村韓屋村',lat:37.5825,lng:126.9851},
+  {id:'n-tower',emoji:'🗼',type:'landmark',area:'itaewon',ko:'N서울타워',en:'N Seoul Tower',ja:'Nソウルタワー',lat:37.5512,lng:126.9882},
+  {id:'changdeok',emoji:'🌿',type:'landmark',area:'insadong',ko:'창덕궁·후원',en:'Changdeokgung & Secret Garden',ja:'昌徳宮·後苑',lat:37.5793,lng:126.9910},
+  {id:'gwangjang',emoji:'🥘',type:'food',area:'dongdaemun',ko:'광장 시장',en:'Gwangjang Market',ja:'広蔵市場',lat:37.5700,lng:126.9993},
+  {id:'lotte-tower',emoji:'🏙️',type:'landmark',area:'jamsil',ko:'롯데월드타워',en:'Lotte World Tower',ja:'ロッテワールドタワー',lat:37.5126,lng:127.1028},
+  {id:'ddp',emoji:'🌀',type:'activity',area:'dongdaemun',ko:'DDP',en:'Dongdaemun Design Plaza',ja:'東大門デザインプラザ',lat:37.5660,lng:127.0090},
+  {id:'hongdae-street',emoji:'🎨',type:'activity',area:'hongdae',ko:'홍대 거리',en:'Hongdae Street',ja:'弘大ストリート',lat:37.5563,lng:126.9226},
+  {id:'cheonggyecheon',emoji:'💧',type:'local',area:'euljiro',ko:'청계천',en:'Cheonggyecheon Stream',ja:'清渓川',lat:37.5693,lng:126.9914},
+  {id:'coex',emoji:'🛍️',type:'shopping',area:'gangnam',ko:'COEX 몰',en:'COEX Mall',ja:'COEXモール',lat:37.5120,lng:127.0596},
+  {id:'ikseon-dong',emoji:'🍶',type:'local',area:'jongno3ga',ko:'익선동',en:'Ikseon-dong',ja:'益善洞',lat:37.5742,lng:126.9936},
+  {id:'myeongdong-shopping',emoji:'🛒',type:'shopping',area:'myeongdong',ko:'명동 쇼핑',en:'Myeongdong Shopping',ja:'明洞ショッピング',lat:37.5636,lng:126.9836},
+  {id:'lotte-world',emoji:'🎡',type:'activity',area:'jamsil',ko:'롯데월드',en:'Lotte World',ja:'ロッテワールド',lat:37.5114,lng:127.0981},
+  {id:'itaewon-food',emoji:'🍜',type:'food',area:'itaewon',ko:'이태원 맛집 골목',en:'Itaewon Food Street',ja:'梨泰院グルメ路地',lat:37.5345,lng:126.9940},
+  {id:'namsan-park',emoji:'🌳',type:'activity',area:'itaewon',ko:'남산 공원',en:'Namsan Park',ja:'南山公園',lat:37.5456,lng:126.9908},
+];
+
+const AIRPORTS = [
+  {id:'ICN',ko:'인천국제공항',en:'Incheon Intl Airport',ja:'仁川国際空港',lat:37.4490,lng:126.4510,access:{
+    seoulstation:{ko:'43분',en:'43 min',ja:'43分',line:'AREX직통'},
+    hongdae:{ko:'55분',en:'55 min',ja:'55分',line:'AREX직통'},
+    myeongdong:{ko:'63분',en:'63 min',ja:'63分',line:'AREX+환승'},
+    insadong:{ko:'65분',en:'65 min',ja:'65分',line:'AREX+환승'},
+    gangnam:{ko:'80분',en:'80 min',ja:'80分',line:'AREX+환승'},
+  }},
+  {id:'GMP',ko:'김포국제공항',en:'Gimpo Intl Airport',ja:'金浦国際空港',lat:37.5583,lng:126.7906,access:{
+    hongdae:{ko:'15분',en:'15 min',ja:'15分',line:'공항철도'},
+    seoulstation:{ko:'25분',en:'25 min',ja:'25分',line:'공항철도'},
+    gangnam:{ko:'28분',en:'28 min',ja:'28分',line:'9호선'},
+    myeongdong:{ko:'30분',en:'30 min',ja:'30分',line:'공항철도+환승'},
+    insadong:{ko:'35분',en:'35 min',ja:'35分',line:'지하철+환승'},
+  }},
+];
+
+const AREA_TAGS = {
+  myeongdong:['쇼핑','뷰티','길거리음식'],hongdae:['클럽','카페','예술'],gangnam:['럭셔리','비즈니스','미식'],
+  itaewon:['다국적','나이트라이프','이색음식'],insadong:['전통','갤러리','궁궐'],dongdaemun:['패션','24H','DDP'],
+  sinchon:['대학가','저예산','젊음'],gwanghwamun:['역사','광장','궁궐'],euljiro:['레트로','힙','공예'],
+  jamsil:['롯데월드','한강','스포츠'],jongno3ga:['사찰','익선동','재즈'],seoulstation:['KTX','공항철도','환승'],
+};
+const AREA_IMAGES = {
+  myeongdong:'https://picsum.photos/seed/myeongdong/400/100',hongdae:'https://picsum.photos/seed/hongdae/400/100',
+  gangnam:'https://picsum.photos/seed/gangnam/400/100',itaewon:'https://picsum.photos/seed/itaewon/400/100',
+  insadong:'https://picsum.photos/seed/insadong/400/100',dongdaemun:'https://picsum.photos/seed/dongdaemun/400/100',
+  sinchon:'https://picsum.photos/seed/sinchon/400/100',gwanghwamun:'https://picsum.photos/seed/gwanghwamun/400/100',
+  euljiro:'https://picsum.photos/seed/euljiro/400/100',jamsil:'https://picsum.photos/seed/jamsil/400/100',
+  jongno3ga:'https://picsum.photos/seed/jongno3ga/400/100',seoulstation:'https://picsum.photos/seed/seoulstation/400/100',
+};
+const TRAVEL_TYPES = [
+  {id:'food',emoji:'🍽️',ko:'맛집투어',en:'Foodie Tour',ja:'グルメツアー'},
+  {id:'landmark',emoji:'🏛️',ko:'유명 장소',en:'Landmarks',ja:'名所巡り'},
+  {id:'local',emoji:'🌿',ko:'로컬 체험',en:'Local Vibes',ja:'ローカル体験'},
+  {id:'activity',emoji:'🎢',ko:'액티비티',en:'Activities',ja:'アクティビティ'},
+  {id:'shopping',emoji:'🛍️',ko:'쇼핑',en:'Shopping',ja:'ショッピング'},
+  {id:'photo',emoji:'📸',ko:'사진 명소',en:'Photo Spots',ja:'フォトスポット'},
+];
+const MAX_TYPE_SEL = 3;
+const TYPE_AREA_SCORE = {
+  food:{myeongdong:10,dongdaemun:9,euljiro:8,insadong:8,itaewon:8,hongdae:7},
+  landmark:{insadong:10,gwanghwamun:9,jongno3ga:8,jamsil:7,itaewon:6},
+  local:{euljiro:9,jongno3ga:8,hongdae:8,itaewon:7,sinchon:6},
+  activity:{jamsil:10,hongdae:8,itaewon:7,gangnam:7,dongdaemun:7},
+  shopping:{myeongdong:10,dongdaemun:9,gangnam:8,hongdae:7,seoulstation:6},
+  photo:{insadong:9,euljiro:8,gwanghwamun:8,itaewon:7,jamsil:7},
+};
+const DAY_COLORS = ['#6366f1','#f97316','#22c55e','#ec4899','#14b8a6','#f59e0b'];
+
+/* ── STATE ── */
+const THRESH=[30000,60000,100000,160000,250000];
+const COLORS=['#22c55e','#84cc16','#eab308','#f97316','#ef4444','#a855f7'];
+let currentLang='ko',currentType='capsule',currentCurrency='KRW';
+let currentCompanion='solo',selectedTypes=[],plannerNights=3;
+let attrVisible=false,airportVisible=false;
+const EX={KRW:1,JPY:0.105,USD:0.00075},SYM={KRW:'₩',JPY:'¥',USD:'$'};
+const TYPE_RANGES_KRW={capsule:[20000,32000],hostel:[25000,42000],budget:[58000,95000],standard:[95000,165000],premium:[165000,320000],luxury:[350000,null]};
+
+function fmt(krw){if(krw===null||krw===undefined)return '—';return SYM[currentCurrency]+Math.round(krw*EX[currentCurrency]).toLocaleString();}
+function getColor(p){if(p===null)return '#4a5f78';for(let i=0;i<THRESH.length;i++)if(p<THRESH[i])return COLORS[i];return COLORS[5];}
+function fmtRangeVal(krw){const v=krw*EX[currentCurrency];if(currentCurrency==='KRW')return SYM.KRW+Math.round(v/1000).toLocaleString()+'k';if(currentCurrency==='JPY')return SYM.JPY+Math.round(v).toLocaleString();return SYM.USD+Math.round(v).toLocaleString();}
+function updateTypeRanges(){Object.entries(TYPE_RANGES_KRW).forEach(([type,[min,max]])=>{const el=document.getElementById('tr-'+type);if(el)el.textContent=max===null?fmtRangeVal(min)+'+':fmtRangeVal(min)+'~'+fmtRangeVal(max);});}
+
+const map=L.map('map',{center:[37.5400,126.9900],zoom:12,zoomControl:true});
+let baseTile=null;
+function setBaseTile(lang){if(baseTile)map.removeLayer(baseTile);baseTile=L.tileLayer(`https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png?language=${lang}`,{attribution:'&copy; <a href="https://stadiamaps.com/">Stadia Maps</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',maxZoom:20}).addTo(map);}
+setBaseTile('ko');
+
+const subwayLayer=L.layerGroup().addTo(map),circles=L.layerGroup().addTo(map),connectorLayer=L.layerGroup().addTo(map),markers=L.layerGroup().addTo(map),labelLayer=L.layerGroup().addTo(map),baseCircles={};
+const attrLayer=L.layerGroup().addTo(map),airportLayer=L.layerGroup().addTo(map),routeLayer=L.layerGroup().addTo(map);
+const LABEL_AREAS=Object.keys(LABEL_OFFSETS);
+
+function makeIcon(area,color){const html=`<div style="width:46px;height:46px;border-radius:50%;background:${color};border:2.5px solid rgba(255,255,255,.85);box-shadow:0 3px 16px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;"><span class="material-symbols-outlined" style="font-size:22px;color:#fff;">directions_subway</span>${area.rec?`<div style="position:absolute;top:-3px;right:-3px;width:15px;height:15px;background:#3b82f6;border-radius:50%;border:2px solid #0b0e1a;display:flex;align-items:center;justify-content:center;font-size:7px;color:#fff;font-weight:900;">★</div>`:''}</div>`;return L.divIcon({html,className:'',iconSize:[46,46],iconAnchor:[23,23],popupAnchor:[0,-26]});}
+function hoverArea(id){const bc=baseCircles[id],c=AREA_COLORS[id]||'#3b82f6';if(bc)bc.setStyle({fillOpacity:.55,opacity:1,weight:3,color:c,fillColor:c});}
+function unhoverArea(id){const bc=baseCircles[id],c=AREA_COLORS[id]||'#3b82f6';if(bc)bc.setStyle({fillOpacity:.22,opacity:.8,weight:2,color:c,fillColor:c});}
+
+function makeAreaLabel(area,dir){const meta=AREA_META[area.id]||{},aColor=AREA_COLORS[area.id]||'#3b82f6',name=area[currentLang]||area.ko,tag=currentLang==='ko'?meta.tagKo:currentLang==='en'?meta.tagEn:meta.tagJa,iconList=(meta.icons||[area.icon]).slice(0,2),iconsHtml=iconList.map(ic=>`<span class="material-symbols-outlined" style="color:${aColor};">${ic}</span>`).join('');const tfmMap={n:'translateX(-50%) translateY(-100%)',s:'translateX(-50%)',e:'translateY(-50%)',w:'translateX(-100%) translateY(-50%)',ne:'translateY(-100%)',nw:'translateX(-100%) translateY(-100%)',se:'',sw:'translateX(-100%)'};const tfm=tfmMap[dir]||tfmMap.s;const html=`<div style="position:relative;width:0;height:0;"><div class="area-label" style="position:absolute;transform:${tfm};" onmouseenter="this.style.borderColor='${aColor}';this.style.boxShadow='0 8px 28px rgba(0,0,0,.7),0 0 0 1px ${aColor}';hoverArea('${area.id}');" onmouseleave="this.style.borderColor='rgba(255,255,255,.12)';this.style.boxShadow='0 4px 18px rgba(0,0,0,.55)';unhoverArea('${area.id}');"><div class="al-icons">${iconsHtml}</div><div class="al-name">${name}</div>${tag?`<div class="al-tagline">${tag}</div>`:''}</div></div>`;return L.divIcon({html,className:'',iconSize:[0,0],iconAnchor:[0,0]});}
+
+function makePopup(area){
+  const t=TR[currentLang],price=area.prices[currentType],color=price!==null?getColor(price):'#4a5f78',name=area[currentLang]||area.ko;
+  const spots=(currentLang==='ko'?area.sKo:currentLang==='en'?area.sEn:area.sJa)||[];
+  const tags=spots.map(s=>`<span class="pu-tag">${s}</span>`).join('');
+  const rows=Object.entries(area.prices).map(([k,v])=>{const active=k===currentType?'pu-active':'',icon={capsule:'bedroom_parent',hostel:'backpack',budget:'apartment',standard:'hotel',premium:'star',luxury:'diamond'}[k],valHtml=v!==null?`<span class="pu-val">${fmt(v)}<span class="pu-night">${t.perNight}</span></span>`:`<span class="pu-na">${t.na}</span>`;return `<div class="pu-row ${active}"><span class="pu-label"><span class="material-symbols-outlined" style="font-size:14px;">${icon}</span>${t.types[k]}</span>${valHtml}</div>`;}).join('');
+  const q=encodeURIComponent(name+' hotel Seoul');
+  const imgHtml=`<img class="pu-img" src="${AREA_IMAGES[area.id]||''}" alt="${name}" loading="lazy"/>`;
+  const charTags=(AREA_TAGS[area.id]||[]).map(tag=>`<span class="pu-char-tag">${tag}</span>`).join('');
+  const charTagsHtml=charTags?`<div class="pu-char-tags">${charTags}</div>`:'';
+  const accessRows=AIRPORTS.map(ap=>{const ac=ap.access[area.id];if(!ac)return '';const time=currentLang==='ko'?ac.ko:currentLang==='en'?ac.en:ac.ja;return `<div class="pu-access-row"><span class="pu-access-ap"><span class="material-symbols-outlined" style="font-size:12px;">connecting_airports</span>${ap.id}</span><span><span class="pu-access-time">${time}</span><span class="pu-access-line"> · ${ac.line}</span></span></div>`;}).join('');
+  const accessHtml=accessRows?`<div class="pu-access"><div class="pu-access-hd">✈ 공항 접근</div>${accessRows}</div>`:'';
+  return `<div class="pu-wrap">${imgHtml}${charTagsHtml}<div class="pu-head"><div class="pu-picto" style="background:${color};"><span class="material-symbols-outlined">${area.icon}</span></div><div><div class="pu-name">${name}${area.rec?`<span class="pu-badge">${t.rec}</span>`:''}</div><div class="pu-sub">${t.avgPrice}</div></div></div><div class="pu-tags">${tags}</div><div class="pu-table">${rows}</div>${accessHtml}<div class="pu-btns"><a class="pu-btn pu-google" href="https://www.google.com/maps/search/${q}" target="_blank"><span class="material-symbols-outlined" style="font-size:13px;">map</span>Maps</a><a class="pu-btn pu-booking" href="https://www.booking.com/searchresults.html?ss=${q}" target="_blank"><span class="material-symbols-outlined" style="font-size:13px;">hotel</span>Booking</a></div></div>`;
+}
+
+function renderMap(){circles.clearLayers();connectorLayer.clearLayers();markers.clearLayers();labelLayer.clearLayers();Object.keys(baseCircles).forEach(k=>delete baseCircles[k]);AREAS.forEach(area=>{if(!LABEL_AREAS.includes(area.id))return;const priceColor=getColor(area.prices[currentType]),aColor=AREA_COLORS[area.id]||priceColor;const bc=L.circle(area.coords,{radius:area.radius||500,color:aColor,fillColor:aColor,fillOpacity:.22,weight:2,opacity:.8}).bindPopup(()=>makePopup(area),{maxWidth:320,minWidth:272}).addTo(circles);baseCircles[area.id]=bc;L.marker(area.coords,{icon:makeIcon(area,priceColor)}).bindPopup(()=>makePopup(area),{maxWidth:320,minWidth:272}).addTo(markers);const lo=LABEL_OFFSETS[area.id]||{off:[0.022,0],dir:'n'},labelPos=[area.coords[0]+lo.off[0],area.coords[1]+lo.off[1]],connector=L.polyline([area.coords,labelPos],{color:aColor,weight:1.5,opacity:.55,dashArray:'4 4'}).addTo(connectorLayer);L.circleMarker(area.coords,{radius:5,color:'rgba(255,255,255,.8)',weight:2,fillColor:aColor,fillOpacity:1}).addTo(connectorLayer);const lblMarker=L.marker(labelPos,{icon:makeAreaLabel(area,lo.dir),zIndexOffset:300,draggable:true}).addTo(labelLayer);lblMarker.on('drag',function(e){connector.setLatLngs([area.coords,e.target.getLatLng()]);});});}
+function renderConnections(){subwayLayer.clearLayers();AREA_CONNECTIONS.forEach(line=>{L.polyline(line.coords,{color:'rgba(0,0,0,.4)',weight:line.weight+3,opacity:.6,lineJoin:'round',lineCap:'round'}).addTo(subwayLayer);L.polyline(line.coords,{color:line.color,weight:line.weight,opacity:.85,lineJoin:'round',lineCap:'round'}).bindTooltip(line[currentLang==='ja'?'ja':currentLang==='en'?'en':'ko'],{sticky:true,direction:'top',className:'subway-tip',offset:[0,-4]}).addTo(subwayLayer);});}
+function renderSubwayList(){const seen=new Set(),unique=AREA_CONNECTIONS.filter(l=>{if(seen.has(l.ko))return false;seen.add(l.ko);return true;});document.getElementById('subway-list').innerHTML=unique.map(l=>{const m=l.ko.match(/^(.+?)(?:\s*\((.+?)\))?$/),name=m[1],org=m[2]||'';return `<div class="sl-item"><div class="sl-swatch" style="background:${l.color}"></div><div class="sl-name">${name}${org?`<span class="sl-org">${org}</span>`:''}</div></div>`;}).join('');}
+
+/* ── COMPANION FILTER ── */
+function setCompanion(c){currentCompanion=c;['solo','couple','friends','family'].forEach(k=>{document.getElementById('comp-'+k).classList.toggle('active',k===c);});}
+
+/* ── ATTRACTIONS OVERLAY ── */
+function renderAttractions(){
+  attrLayer.clearLayers();
+  const typeClass={landmark:'attr-landmark',food:'attr-food',shopping:'attr-shopping',activity:'attr-activity',local:'attr-local'};
+  ATTRACTIONS.forEach(a=>{
+    const cls=typeClass[a.type]||'attr-landmark';
+    const icon=L.divIcon({html:`<div class="attr-dot ${cls}">${a.emoji}</div>`,className:'',iconSize:[30,30],iconAnchor:[15,15]});
+    const name=currentLang==='ko'?a.ko:currentLang==='en'?a.en:a.ja;
+    L.marker([a.lat,a.lng],{icon}).bindTooltip(name,{direction:'top',offset:[0,-18],className:'subway-tip'}).addTo(attrLayer);
+  });
+}
+function toggleAttractions(){
+  attrVisible=!attrVisible;
+  document.getElementById('ovl-attr').classList.toggle('active',attrVisible);
+  if(attrVisible)renderAttractions(); else attrLayer.clearLayers();
+}
+
+/* ── AIRPORTS OVERLAY ── */
+function renderAirports(){
+  airportLayer.clearLayers();
+  AIRPORTS.forEach(ap=>{
+    const name=currentLang==='ko'?ap.ko:currentLang==='en'?ap.en:ap.ja;
+    const icon=L.divIcon({html:`<div class="ap-chip">✈ ${ap.id}</div>`,className:'',iconSize:[null,null],iconAnchor:[28,14]});
+    L.marker([ap.lat,ap.lng],{icon}).bindTooltip(name,{direction:'top',className:'subway-tip'}).addTo(airportLayer);
+  });
+}
+function toggleAirports(){
+  airportVisible=!airportVisible;
+  document.getElementById('ovl-airport').classList.toggle('active',airportVisible);
+  if(airportVisible)renderAirports(); else airportLayer.clearLayers();
+}
+
+/* ── PLANNER ── */
+function openPlanner(){document.getElementById('planner-overlay').classList.add('open');renderTravelTypeGrid();}
+function closePlanner(){document.getElementById('planner-overlay').classList.remove('open');}
+function changeNights(d){plannerNights=Math.max(1,Math.min(14,plannerNights+d));document.getElementById('pn-nights-val').textContent=plannerNights;}
+function renderTravelTypeGrid(){
+  const grid=document.getElementById('pn-type-grid');
+  grid.innerHTML=TRAVEL_TYPES.map(tp=>{
+    const sel=selectedTypes.includes(tp.id),maxed=!sel&&selectedTypes.length>=MAX_TYPE_SEL;
+    const name=currentLang==='ko'?tp.ko:currentLang==='en'?tp.en:tp.ja;
+    return `<button class="ts-btn${sel?' active':''}${maxed?' maxed':''}" onclick="toggleTravelType('${tp.id}')"><span class="ts-emoji">${tp.emoji}</span><span class="ts-name">${name}</span></button>`;
+  }).join('');
+  document.getElementById('pn-type-hint').textContent=`${selectedTypes.length} / ${MAX_TYPE_SEL} 선택됨`;
+}
+function toggleTravelType(id){
+  const i=selectedTypes.indexOf(id);
+  if(i>=0)selectedTypes.splice(i,1);
+  else if(selectedTypes.length<MAX_TYPE_SEL)selectedTypes.push(id);
+  renderTravelTypeGrid();
+}
+
+const AREA_PROXIMITY = {
+  insadong:   ['gwanghwamun','jongno3ga','euljiro','dongdaemun','myeongdong'],
+  gwanghwamun:['insadong','jongno3ga','euljiro','seoulstation'],
+  jongno3ga:  ['insadong','gwanghwamun','euljiro','dongdaemun'],
+  euljiro:    ['jongno3ga','myeongdong','dongdaemun','insadong'],
+  myeongdong: ['euljiro','seoulstation','dongdaemun','itaewon'],
+  dongdaemun: ['euljiro','jongno3ga','myeongdong'],
+  itaewon:    ['myeongdong','seoulstation','gangnam'],
+  seoulstation:['myeongdong','itaewon','sinchon','hongdae'],
+  hongdae:    ['sinchon','seoulstation','itaewon'],
+  sinchon:    ['hongdae','seoulstation'],
+  gangnam:    ['itaewon','jamsil'],
+  jamsil:     ['gangnam'],
+};
+
+function isNearbyArea(a,b){return (AREA_PROXIMITY[a]||[]).includes(b)||(AREA_PROXIMITY[b]||[]).includes(a);}
+
+function buildItinerary(nights,types,budgetKRW){
+  const days=nights+1;
+  // score areas
+  const areaScore={};
+  AREAS.forEach(a=>{let s=0;types.forEach(t=>{s+=(TYPE_AREA_SCORE[t]&&TYPE_AREA_SCORE[t][a.id])||0;});areaScore[a.id]=s;});
+  // recommend accommodation
+  const accArea=AREAS.filter(a=>a.prices[currentType]!==null).sort((a,b)=>areaScore[b.id]-areaScore[a.id])[0]||AREAS[0];
+  // pick day areas by clustering
+  const sortedAreas=[...AREAS].sort((a,b)=>areaScore[b.id]-areaScore[a.id]);
+  const dayAreas=[];
+  for(let d=0;d<days&&sortedAreas.length;d++){
+    let pick=sortedAreas[0];
+    if(d>0){const prev=dayAreas[d-1];const nearby=sortedAreas.filter(a=>isNearbyArea(a.id,prev.id));if(nearby.length)pick=nearby[0];}
+    dayAreas.push(pick);
+    sortedAreas.splice(sortedAreas.indexOf(pick),1);
+  }
+  // attractions per day
+  const dayPlans=dayAreas.map((area,i)=>{
+    const nearIds=[area.id,...(AREA_PROXIMITY[area.id]||[])];
+    const spots=ATTRACTIONS.filter(a=>nearIds.includes(a.area)&&(types.length===0||types.includes(a.type))).slice(0,3);
+    return {area,spots,color:DAY_COLORS[i%DAY_COLORS.length]};
+  });
+  return {accArea,dayPlans,budgetKRW};
+}
+
+function renderPlannerResult(plan){
+  const {accArea,dayPlans,budgetKRW}=plan;
+  const accPrice=accArea.prices[currentType]||0;
+  const totalAccKRW=accPrice*plannerNights;
+  const remaining=budgetKRW>0?budgetKRW-totalAccKRW:null;
+  const accName=currentLang==='ko'?accArea.ko:currentLang==='en'?accArea.en:accArea.ja;
+  const whyMap={food:'맛집·시장 접근성 최고',landmark:'궁궐·역사 명소 인접',local:'골목·로컬 감성 풍부',activity:'체험·엔터테인먼트 집중',shopping:'쇼핑 편의 탁월',photo:'인생샷 포인트 밀집'};
+  const mainType=selectedTypes[0]||'landmark';
+  const whyStr=whyMap[mainType]||'접근성·편의 종합 최우수';
+  let html=`<div class="pn-result"><div class="pn-result-hd">🏨 추천 숙소 위치</div><div class="rec-card"><div class="rec-emoji">🛏️</div><div><div class="rec-label">STAY</div><div class="rec-name">${accName}</div><div class="rec-why">${whyStr}</div><div class="rec-price">${fmt(accPrice)}/박 · ${plannerNights}박 = ${fmt(totalAccKRW)}${remaining!==null?` · 잔여예산 ${fmt(Math.max(0,remaining))}`:''}</div></div></div><div class="pn-result-hd" style="margin-top:14px;">📅 추천 동선</div>`;
+  dayPlans.forEach((dp,i)=>{
+    const aName=currentLang==='ko'?dp.area.ko:currentLang==='en'?dp.area.en:dp.area.ja;
+    const stopsHtml=dp.spots.map((s,si)=>{const sName=currentLang==='ko'?s.ko:currentLang==='en'?s.en:s.ja;return `<div class="step-row"><div class="step-num" style="background:${dp.color}">${si+1}</div><div class="step-emoji">${s.emoji}</div><div class="step-body"><div class="step-name">${sName}</div></div></div>`;}).join('');
+    html+=`<div class="day-card"><div class="day-hd"><div class="day-dot" style="background:${dp.color}"></div><div class="day-title">Day ${i+1}</div><div class="day-zone">${aName}</div></div><div class="day-stops">${stopsHtml||'<div style="font-size:.62rem;color:var(--text3);padding:4px 0;">자유 일정</div>'}</div></div>`;
+  });
+  html+='</div>';
+  document.getElementById('pn-result').innerHTML=html;
+}
+
+function drawRouteOnMap(plan){
+  routeLayer.clearLayers();
+  plan.dayPlans.forEach((dp,i)=>{
+    const spots=[{lat:dp.area.coords[0],lng:dp.area.coords[1]},...dp.spots.map(s=>({lat:s.lat,lng:s.lng}))];
+    for(let j=0;j<spots.length-1;j++){
+      const A=spots[j],B=spots[j+1];
+      L.polyline([[A.lat,A.lng],[B.lat,B.lng]],{color:dp.color,weight:3,opacity:.85,dashArray:'6 4'}).addTo(routeLayer);
+      const midLat=(A.lat+B.lat)/2,midLng=(A.lng+B.lng)/2;
+      const angle=Math.atan2(B.lng-A.lng,B.lat-A.lat)*180/Math.PI;
+      L.marker([midLat,midLng],{icon:L.divIcon({html:`<div style="transform:rotate(${angle}deg);font-size:10px;color:${dp.color};text-shadow:0 0 4px #000;">▼</div>`,className:'',iconSize:[12,12],iconAnchor:[6,6]})}).addTo(routeLayer);
+    }
+    // bubble banner at area center
+    const aName=currentLang==='ko'?dp.area.ko:currentLang==='en'?dp.area.en:dp.area.ja;
+    L.marker(dp.area.coords,{icon:L.divIcon({html:`<div class="rb-wrap"><div class="rb-num" style="background:${dp.color}">${i+1}</div><div class="rb-text">Day ${i+1} · ${aName}</div></div>`,className:'',iconSize:[null,null],iconAnchor:[-4,14]}),zIndexOffset:500}).addTo(routeLayer);
+  });
+  if(plan.dayPlans.length){
+    const allCoords=[...plan.dayPlans.flatMap(dp=>[dp.area.coords,...dp.spots.map(s=>[s.lat,s.lng])])];
+    if(allCoords.length)map.fitBounds(L.latLngBounds(allCoords),{padding:[48,48]});
+  }
+}
+
+function generateAndRender(){
+  if(selectedTypes.length===0){alert('여행 유형을 1개 이상 선택해주세요.');return;}
+  const budgetInput=document.getElementById('pn-budget');
+  const budgetKRW=parseFloat(budgetInput.value)||0;
+  const plan=buildItinerary(plannerNights,selectedTypes,budgetKRW);
+  renderPlannerResult(plan);
+  drawRouteOnMap(plan);
+  closePlanner();
+}
+
+function applyLang(){const t=TR[currentLang];document.getElementById('h-title').textContent=t.title;document.getElementById('h-sub').textContent=t.sub;document.getElementById('h-hint').textContent=t.hint;document.getElementById('sec-type').textContent=t.secType;document.getElementById('sec-legend').textContent=t.secLegend;document.getElementById('sec-notes').textContent=t.secNotes;document.getElementById('sec-subway').textContent=t.secSubway;Object.keys(t.types).forEach(k=>{const el=document.getElementById('tn-'+k);if(el)el.textContent=t.types[k];});t.legLabels.forEach((lbl,i)=>{const el=document.getElementById('ll'+i);if(el)el.textContent=lbl;});t.legColors.forEach((lbl,i)=>{const el=document.getElementById('lc'+i);if(el)el.textContent=lbl;});t.notes.forEach((note,i)=>{const el=document.getElementById('nt'+i);if(el)el.textContent=note;});document.getElementById('area-count').textContent=AREAS.length+t.unit;document.documentElement.lang=currentLang;const subBtn=document.getElementById('subway-toggle-btn');const isOpen=document.getElementById('subway-list').classList.contains('open');if(subBtn)subBtn.textContent=isOpen?t.collapse:t.expand;}
+function setLang(lang){currentLang=lang;['ko','en','ja'].forEach(l=>{document.getElementById('lang-'+l).classList.toggle('active',l===lang);});setBaseTile(lang);applyLang();renderConnections();renderMap();}
+function setType(type){currentType=type;document.querySelectorAll('.type-btn').forEach(b=>b.classList.remove('active'));document.getElementById('tab-'+type).classList.add('active');renderMap();}
+function setCur(cur){currentCurrency=cur;['KRW','JPY','USD'].forEach(c=>{document.getElementById('btn-'+c.toLowerCase()).classList.toggle('active',c===cur);});updateTypeRanges();renderMap();}
+function toggleSidebar(){const sb=document.getElementById('sidebar'),btn=document.getElementById('sb-toggle'),open=sb.classList.toggle('collapsed');btn.textContent=open?'›':'‹';btn.style.left=open?'0':'272px';setTimeout(()=>map.invalidateSize(),280);}
+function toggleSubway(){const list=document.getElementById('subway-list'),btn=document.getElementById('subway-toggle-btn'),t=TR[currentLang],open=list.classList.toggle('open');btn.textContent=open?t.collapse:t.expand;}
+
+applyLang();updateTypeRanges();renderSubwayList();renderConnections();renderMap();
+</script>
+</body>
+</html>

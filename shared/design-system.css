@@ -1,0 +1,144 @@
+/**
+ * TravelMap Design System
+ * Shared CSS tokens & components used by all pages
+ */
+
+/* ── Google Fonts ── */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Inter:wght@400;500;600;700&display=swap');
+
+/* ─────────────────────────────────────────
+   Design Tokens
+───────────────────────────────────────── */
+:root {
+  /* Backgrounds */
+  --bg:       #0b0e1a;
+  --panel:    #111827;
+  --raised:   #172033;
+  --overlay:  #1e2a42;
+
+  /* Borders */
+  --border:   rgba(255,255,255,.07);
+  --border2:  rgba(255,255,255,.13);
+  --border3:  rgba(255,255,255,.22);
+
+  /* Text */
+  --text:     #eef2f8;
+  --text2:    #8a9bb5;
+  --text3:    #4a5f78;
+
+  /* Accent — overridden per city */
+  --accent:   #f97316;
+  --accent-d: rgba(249,115,22,.15);
+
+  /* Price scale */
+  --p1: #22c55e;
+  --p2: #84cc16;
+  --p3: #eab308;
+  --p4: #f97316;
+  --p5: #ef4444;
+  --p6: #a855f7;
+
+  /* Spacing */
+  --sp1:  4px;   --sp2:  8px;  --sp3: 12px;
+  --sp4: 16px;   --sp5: 20px;  --sp6: 24px;
+
+  /* Radii */
+  --r-sm:   6px;   --r-md:  10px;
+  --r-lg:  16px;   --r-xl:  20px;
+  --r-full: 9999px;
+
+  /* Shadows */
+  --sh-sm: 0 1px 4px  rgba(0,0,0,.35);
+  --sh-md: 0 4px 20px rgba(0,0,0,.45);
+  --sh-lg: 0 8px 36px rgba(0,0,0,.55);
+
+  /* Easing */
+  --ease: cubic-bezier(.25,.8,.25,1);
+  --ease-in: cubic-bezier(.4,0,1,1);
+
+  /* Font */
+  --font: 'Noto Sans KR','Inter',-apple-system,'Malgun Gothic',sans-serif;
+}
+
+/* ─────────────────────────────────────────
+   Reset
+───────────────────────────────────────── */
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0 }
+html,body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─────────────────────────────────────────
+   Toggle Group  (language / currency)
+───────────────────────────────────────── */
+.toggle-group {
+  display: flex;
+  background: var(--raised);
+  border: 1px solid var(--border2);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+.tg-btn {
+  padding: 5px 11px;
+  font-size: .7rem;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 140ms;
+  font-family: var(--font);
+  white-space: nowrap;
+}
+.tg-btn:hover  { color: var(--text); background: rgba(255,255,255,.06) }
+.tg-btn.active { background: var(--accent); color: #fff; font-weight: 700 }
+
+/* ─────────────────────────────────────────
+   Section Header
+───────────────────────────────────────── */
+.sec-title {
+  font-size: .62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .09em;
+  color: var(--text3);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+/* ─────────────────────────────────────────
+   Badges
+───────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: .58rem;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: var(--r-full);
+}
+.badge-live {
+  background: rgba(34,197,94,.1);
+  color: #4ade80;
+  border: 1px solid rgba(34,197,94,.22);
+}
+.badge-soon {
+  background: rgba(255,255,255,.04);
+  color: var(--text3);
+  border: 1px solid var(--border);
+}
+
+/* ─────────────────────────────────────────
+   Scrollbar
+───────────────────────────────────────── */
+::-webkit-scrollbar       { width: 4px }
+::-webkit-scrollbar-track { background: transparent }
+::-webkit-scrollbar-thumb { background: var(--overlay); border-radius: 4px }

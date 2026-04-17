@@ -6,7 +6,7 @@
 window.CITY_REGISTRY = [
   {
     id: 'tokyo',
-    file: 'tokyo-accommodation-map.html',
+    file: 'cities/tokyo/index.html',
     ko: '도쿄', en: 'Tokyo', ja: '東京',
     country: { ko: '일본', en: 'Japan', ja: '日本', flag: '🇯🇵' },
     coords: [35.6762, 139.6503],
@@ -20,7 +20,7 @@ window.CITY_REGISTRY = [
   },
   {
     id: 'osaka',
-    file: 'osaka-accommodation-map.html',
+    file: 'cities/osaka/index.html',
     ko: '오사카', en: 'Osaka', ja: '大阪',
     country: { ko: '일본', en: 'Japan', ja: '日本', flag: '🇯🇵' },
     coords: [34.6937, 135.5023],
@@ -34,7 +34,7 @@ window.CITY_REGISTRY = [
   },
   {
     id: 'seoul',
-    file: 'seoul-accommodation-map.html',
+    file: 'cities/seoul/index.html',
     ko: '서울', en: 'Seoul', ja: 'ソウル',
     country: { ko: '한국', en: 'South Korea', ja: '韓国', flag: '🇰🇷' },
     coords: [37.5665, 126.9780],
