@@ -1,0 +1,9 @@
+{
+  "scripts": {
+    "check:js": "node scripts/check-inline-js.js",
+    "check:links": "node scripts/check-links.js",
+    "check": "npm run check:js && npm run check:links",
+    "serve": "python3 -m http.server 8080"
+  },
+  "devDependencies": {}
+}

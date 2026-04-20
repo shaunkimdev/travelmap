@@ -61,13 +61,12 @@
 /* ── PLANNER OVERLAY / PANEL ── */
 .planner-overlay {
   position:fixed; inset:0; top:58px;
-  background:rgba(0,0,0,.55); z-index:9000;
+  background:transparent; z-index:9000;
   display:flex; align-items:stretch; justify-content:flex-end;
   opacity:0; pointer-events:none;
   transition:opacity 200ms;
-  backdrop-filter:blur(3px);
 }
-.planner-overlay.open { opacity:1; pointer-events:auto }
+.planner-overlay.open { opacity:1; pointer-events:none }
 
 .planner-panel {
   width:360px; max-width:100vw;
@@ -75,6 +74,7 @@
   display:flex; flex-direction:column; overflow:hidden;
   transform:translateX(100%);
   transition:transform 240ms cubic-bezier(.25,.8,.25,1);
+  pointer-events:auto;
 }
 .planner-overlay.open .planner-panel { transform:translateX(0) }
 
@@ -170,6 +170,9 @@
 }
 .pn-gen-btn:hover { filter:brightness(1.1); transform:translateY(-1px) }
 .pn-gen-btn .material-symbols-outlined { font-size:16px }
+.pn-gen-btn.route-clear-mode {
+  background:#ef4444;
+}
 
 /* ── PLAN RESULT ── */
 .pn-result { padding-top:16px; border-top:1px solid var(--border); margin-top:16px }
@@ -181,7 +184,7 @@
 .rec-card {
   background:color-mix(in srgb, var(--accent) 8%, transparent);
   border:1px solid color-mix(in srgb, var(--accent) 28%, transparent);
-  border-radius:var(--r-lg); padding:11px 14px;
+  border-radius:var(--r-md); padding:11px 14px;
   display:flex; align-items:center; gap:10px; margin-bottom:12px;
 }
 .rec-emoji { font-size:1.7rem; line-height:1 }
@@ -191,7 +194,7 @@
 .rec-price { font-size:.65rem; font-weight:700; color:color-mix(in srgb, var(--accent) 80%, transparent); margin-top:3px }
 
 /* Day cards */
-.day-card { margin-bottom:8px; border-radius:var(--r-lg); background:var(--raised); border:1px solid var(--border); overflow:hidden }
+.day-card { margin-bottom:8px; border-radius:var(--r-md); background:var(--raised); border:1px solid var(--border); overflow:hidden }
 .day-hd {
   display:flex; align-items:center; gap:8px;
   padding:8px 12px; background:var(--overlay); border-bottom:1px solid var(--border);
@@ -244,18 +247,150 @@
 
 /* ── ROUTE BUBBLE BANNERS ── */
 .rb-wrap {
+  box-sizing:border-box;
   display:flex; align-items:center; gap:5px;
   background:rgba(9,13,26,.92); border:1.5px solid rgba(255,255,255,.14);
-  border-radius:20px; padding:4px 9px 4px 4px;
+  border-radius:8px; padding:6px 11px 6px 5px;
   white-space:nowrap; box-shadow:0 3px 12px rgba(0,0,0,.65);
-  backdrop-filter:blur(8px); pointer-events:none;
+  backdrop-filter:blur(8px); pointer-events:auto; cursor:grab;
+}
+.rb-wrap:active {
+  cursor:grabbing;
 }
 .rb-num {
-  width:18px; height:18px; border-radius:50%; flex-shrink:0;
+  width:24px; height:24px; border-radius:50%; flex-shrink:0;
   display:flex; align-items:center; justify-content:center;
-  font-size:.58rem; font-weight:900; color:#fff;
+  font-size:.75rem; font-weight:900; color:#fff;
 }
-.rb-text { font-size:.63rem; font-weight:700; color:var(--text) }
+.rb-text { font-size:.82rem; font-weight:800; color:var(--text) }
+
+.route-day-badge {
+  box-sizing:border-box;
+  display:flex; align-items:center; gap:6px;
+  background:rgba(9,13,26,.95);
+  border:3px solid var(--route-color, var(--accent));
+  border-radius:8px;
+  padding:9px 13px;
+  color:var(--text);
+  box-shadow:0 9px 28px rgba(0,0,0,.72), 0 0 0 4px rgba(255,255,255,.1);
+  white-space:nowrap;
+  pointer-events:auto;
+  cursor:grab;
+}
+.route-day-badge:active {
+  cursor:grabbing;
+}
+.route-day-kicker {
+  background:var(--route-color, var(--accent));
+  border-radius:6px;
+  color:#fff;
+  font-size:1.15rem;
+  font-weight:900;
+  line-height:1;
+  padding:8px 10px;
+  text-transform:uppercase;
+}
+.route-day-name {
+  font-size:1.05rem;
+  font-weight:900;
+  line-height:1.15;
+}
+.route-stop-dot {
+  width:30px; height:30px;
+  border:4px solid #fff;
+  border-radius:50%;
+  background:var(--route-color, var(--accent));
+  box-shadow:0 0 0 8px color-mix(in srgb, var(--route-color, var(--accent)) 32%, transparent), 0 5px 18px rgba(0,0,0,.68);
+}
+.route-arrow {
+  color:var(--route-color, var(--accent));
+  font-size:22px;
+  line-height:1;
+  opacity:.95;
+  text-shadow:0 0 5px #000, 0 0 10px #000;
+}
+
+.route-focus-map .leaflet-tile-pane {
+  opacity:.78;
+}
+
+.stay-rec-banner {
+  box-sizing:border-box;
+  min-width:250px;
+  max-width:300px;
+  background:rgba(9,13,26,.96);
+  border:3px solid var(--accent);
+  border-radius:8px;
+  padding:10px 12px;
+  color:var(--text);
+  box-shadow:0 10px 30px rgba(0,0,0,.75), 0 0 0 4px rgba(255,255,255,.1);
+  pointer-events:auto;
+  cursor:grab;
+}
+.stay-rec-banner:active {
+  cursor:grabbing;
+}
+.stay-rec-top {
+  display:flex; align-items:center; gap:8px;
+  margin-bottom:7px;
+}
+.stay-rec-icon {
+  width:36px; height:36px;
+  border-radius:8px;
+  display:flex; align-items:center; justify-content:center;
+  background:var(--accent);
+  color:#fff;
+  font-size:22px;
+  flex-shrink:0;
+}
+.stay-rec-kicker {
+  font-size:.74rem;
+  font-weight:900;
+  color:color-mix(in srgb, var(--accent) 78%, #fff);
+  text-transform:uppercase;
+  line-height:1;
+}
+.stay-rec-name {
+  font-size:1.12rem;
+  font-weight:900;
+  line-height:1.25;
+  margin-top:2px;
+}
+.stay-rec-reasons {
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  margin-top:6px;
+}
+.stay-rec-reason {
+  font-size:.8rem;
+  font-weight:700;
+  color:var(--text2);
+  line-height:1.35;
+}
+.stay-rec-reason::before {
+  content:'✓';
+  color:var(--accent);
+  font-weight:900;
+  margin-right:5px;
+}
+.stay-hotel-pin {
+  box-sizing:border-box;
+  width:48px; height:48px;
+  border-radius:8px;
+  background:var(--accent);
+  border:4px solid #fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:26px;
+  box-shadow:0 0 0 8px color-mix(in srgb, var(--accent) 28%, transparent), 0 7px 22px rgba(0,0,0,.72);
+}
+.stay-rec-arrow {
+  color:var(--accent);
+  font-size:24px;
+  text-shadow:0 0 5px #000, 0 0 10px #000;
+}
 
 /* ── POPUP EXTRAS (image · tags · airport access) ── */
 .pu-img {
@@ -275,6 +410,7 @@
 
 /* ── MOBILE ── */
 @media(max-width:768px){
+  .planner-overlay { top:104px }
   .planner-panel { width:100vw }
   .comp-grid { grid-template-columns:repeat(2,1fr) }
   .types-sel-grid { grid-template-columns:repeat(3,1fr) }

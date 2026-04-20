@@ -119,15 +119,6 @@
       <div id="subway-list" class="subway-body"></div>
     </div>
     <div class="sec">
-      <div class="sec-title" id="sec-companion">동반자</div>
-      <div class="comp-grid">
-        <button class="comp-btn active" id="comp-solo"    onclick="setCompanion('solo')">   <span class="comp-emoji">🧳</span><span class="comp-label" id="cl-solo">혼자</span></button>
-        <button class="comp-btn"        id="comp-couple"  onclick="setCompanion('couple')"> <span class="comp-emoji">💑</span><span class="comp-label" id="cl-couple">커플</span></button>
-        <button class="comp-btn"        id="comp-friends" onclick="setCompanion('friends')"><span class="comp-emoji">👫</span><span class="comp-label" id="cl-friends">친구</span></button>
-        <button class="comp-btn"        id="comp-family"  onclick="setCompanion('family')"> <span class="comp-emoji">👨‍👩‍👧</span><span class="comp-label" id="cl-family">가족</span></button>
-      </div>
-    </div>
-    <div class="sec">
       <div class="sec-title" id="sec-overlay">지도 표시</div>
       <div class="ovl-grid">
         <button class="ovl-btn" id="ovl-attr"    onclick="toggleAttractions()"><span class="ovl-pip"></span><span id="ovl-attr-lbl">🏛️ 관광지</span></button>
@@ -137,7 +128,7 @@
   </div>
   <div id="map"></div>
 </div>
-<div id="planner-overlay" class="planner-overlay" onclick="if(event.target===this)closePlanner()">
+<div id="planner-overlay" class="planner-overlay open">
   <div class="planner-panel">
     <div class="pn-head">
       <div class="pn-head-title">🗓️ <span id="pn-title">여행 일정 플래너</span></div>
@@ -156,14 +147,23 @@
         </div>
       </div>
       <div class="pn-section">
-        <div class="pn-sec-label" id="pn-lbl-types">여행 유형 <small style="text-transform:none;letter-spacing:0;font-weight:500">(최대 3개)</small></div>
-        <div class="types-sel-grid" id="types-sel-grid"></div>
-        <div class="types-hint" id="types-hint">0 / 3 선택됨</div>
+        <div class="pn-sec-label" id="sec-companion">동행 유형</div>
+        <div class="comp-grid">
+          <button class="comp-btn active" id="comp-solo"    onclick="setCompanion('solo')">   <span class="comp-emoji">🧳</span><span class="comp-label" id="cl-solo">혼자</span></button>
+          <button class="comp-btn"        id="comp-couple"  onclick="setCompanion('couple')"> <span class="comp-emoji">💑</span><span class="comp-label" id="cl-couple">커플</span></button>
+          <button class="comp-btn"        id="comp-friends" onclick="setCompanion('friends')"><span class="comp-emoji">👫</span><span class="comp-label" id="cl-friends">친구</span></button>
+          <button class="comp-btn"        id="comp-family"  onclick="setCompanion('family')"> <span class="comp-emoji">👨‍👩‍👧</span><span class="comp-label" id="cl-family">가족</span></button>
+        </div>
       </div>
       <div class="pn-section">
-        <div class="pn-sec-label" id="pn-lbl-budget">총 예산 (항공 제외)</div>
+        <div class="pn-sec-label" id="pn-lbl-types">세대별 여행추천 <small style="text-transform:none;letter-spacing:0;font-weight:500">(1개 선택)</small></div>
+        <div class="types-sel-grid" id="types-sel-grid"></div>
+        <div class="types-hint" id="types-hint">0 / 1 선택됨</div>
+      </div>
+      <div class="pn-section">
+        <div class="pn-sec-label" id="pn-lbl-budget">1인 총 여행 예산 <small style="text-transform:none;letter-spacing:0;font-weight:500">항공권 제외 · 숙박 포함</small></div>
         <div class="budget-row">
-          <input type="number" class="budget-input" id="budget-input" placeholder="예: 50" min="1" step="10">
+          <input type="number" class="budget-input" id="budget-input" placeholder="예: 50" min="1" step="10" aria-describedby="budget-suffix">
           <span class="budget-suffix" id="budget-suffix">만원</span>
         </div>
       </div>
@@ -176,6 +176,7 @@
   </div>
 </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="../../shared/city-runtime.js"></script>
 <script>
 const TR = {
   ko:{title:'오사카 숙박 가격 지도',sub:'위치별 평균 숙박 요금 · Booking.com 기준',hint:'지역 클릭 → 상세 가격 확인 / ★ = 추천',secType:'숙박 유형 선택',secLegend:'가격 색상 기준',secNotes:'안내사항',secSubway:'🚇 지하철 노선',types:{capsule:'캡슐호텔',hostel:'호스텔/게하',budget:'비즈니스 ★★',standard:'스탠다드 ★★★',premium:'프리미엄 ★★★★',luxury:'럭셔리 ★★★★★'},legLabels:['저렴','보통','비쌈','고급'],legColors:['매우 저렴','저렴','보통','약간 비쌈','비쌈','럭셔리'],notes:['절대적인 수치 아님 (참고용)','Booking.com 평균가 기준','성수기·이벤트 시 변동 큼','별(★)은 추천 숙박 위치','최종 업데이트 2024/08'],rec:'추천',perNight:'/박',avgPrice:'평균 숙박 가격 (1박 · 2인 기준)',unit:'개 지역',na:'해당 없음',expand:'펼치기',collapse:'접기'},
@@ -267,21 +268,18 @@ const AREA_IMAGES={
   nakanoshima:'https://picsum.photos/seed/osaka-nakanoshima/400/100',
 };
 const TRAVEL_TYPES=[
-  {id:'food',emoji:'🍜',ko:'맛집 투어',en:'Food Tour',ja:'グルメ巡り'},
-  {id:'landmark',emoji:'🏛️',ko:'유명 장소 도장깨기',en:'Famous Spots',ja:'名所巡り'},
-  {id:'local',emoji:'🎭',ko:'로컬 문화/컨텐츠',en:'Local Culture',ja:'ローカル体験'},
-  {id:'activity',emoji:'🏃',ko:'액티비티',en:'Activities',ja:'アクティビティ'},
-  {id:'shopping',emoji:'🛍️',ko:'쇼핑',en:'Shopping',ja:'ショッピング'},
-  {id:'photo',emoji:'📸',ko:'감성/사진',en:'Photo Spots',ja:'フォトスポット'},
+  {id:'teen',emoji:'🎮',ko:'10대',en:'Teens',ja:'10代'},
+  {id:'young',emoji:'🍜',ko:'20~30대',en:'20s-30s',ja:'20〜30代'},
+  {id:'middle',emoji:'🏯',ko:'40~50대',en:'40s-50s',ja:'40〜50代'},
+  {id:'senior',emoji:'🌿',ko:'60대 이상',en:'60+',ja:'60代以上'},
 ];
-const MAX_TYPE_SEL=3;
+const MAX_TYPE_SEL=1;
+const GENERATION_TYPE_PREFS={teen:['activity','photo','shopping'],young:['food','shopping','photo','local'],middle:['landmark','food','local'],senior:['landmark','local','food']};
 const TYPE_AREA_SCORE={
-  food:     {namba:10,dotonbori:9,shinsaibashi:7,tennoji:6,kyobashi:7},
-  landmark: {osaka_castle:10,dotonbori:9,tsutenkaku:8,tennoji:8,umeda:7},
-  local:    {shinsekai:9,namba:8,dotonbori:8,nakanoshima:7,amerikamura:8},
-  activity: {bay_usj:10,tennoji:7,kaiyukan:8,osaka_castle:7},
-  shopping: {shinsaibashi:10,namba:9,umeda:8,honmachi:6},
-  photo:    {dotonbori:10,osaka_castle:9,shinsaibashi:8,umeda:7,nakanoshima:7},
+  teen:{bay_usj:10,dotonbori:9,shinsaibashi:8,namba:8,tennoji:7},
+  young:{namba:10,dotonbori:10,shinsaibashi:9,umeda:8,shinsekai:8},
+  middle:{osaka_castle:10,namba:8,umeda:8,nakanoshima:7,tennoji:7},
+  senior:{osaka_castle:10,tennoji:9,nakanoshima:8,umeda:7,namba:7},
 };
 const DAY_COLORS=['#3b82f6','#22c55e','#f97316','#a855f7','#ef4444','#06b6d4','#eab308'];
 
@@ -289,19 +287,21 @@ const THRESH=[3500,7000,13000,20000,32000];
 const COLORS=['#22c55e','#84cc16','#eab308','#f97316','#ef4444','#a855f7'];
 let currentLang='ko',currentType='capsule',currentCurrency='JPY';
 let currentCompanion='solo',selectedTypes=[],plannerNights=3;
+let routeFocusActive=false;
+let routeFocusAreaIds=new Set();
 const attrLayer=L.layerGroup(),airportLayer=L.layerGroup(),routeLayer=L.layerGroup();
 let attrVisible=false,airportVisible=false;
 const EX={JPY:1,KRW:9.5,USD:0.0067},SYM={JPY:'¥',KRW:'₩',USD:'$'};
 const TYPE_RANGES_JPY={capsule:[2500,5000],hostel:[3000,5500],budget:[7000,12000],standard:[13000,22000],premium:[25000,45000],luxury:[60000,null]};
 
 function fmt(jpy){if(jpy===null||jpy===undefined)return '—';return SYM[currentCurrency]+Math.round(jpy*EX[currentCurrency]).toLocaleString();}
-function getColor(p){if(p===null)return '#4a5f78';for(let i=0;i<THRESH.length;i++)if(p<THRESH[i])return COLORS[i];return COLORS[5];}
+function getColor(p){if(p===null)return '#4a5f78';const values=AREAS.map(a=>a.prices[currentType]).filter(v=>v!==null&&v!==undefined).sort((a,b)=>a-b);if(values.length<2)return COLORS[2];const index=values.findIndex(v=>p<=v),rank=(index<0?values.length-1:index)/(values.length-1);return COLORS[Math.min(5,Math.floor(rank*6))];}
 function fmtRangeVal(jpy){const v=jpy*EX[currentCurrency];if(currentCurrency==='JPY')return SYM.JPY+Math.round(v).toLocaleString();if(currentCurrency==='KRW')return SYM.KRW+Math.round(v/1000).toLocaleString()+'k';return SYM.USD+Math.round(v).toLocaleString();}
 function updateTypeRanges(){Object.entries(TYPE_RANGES_JPY).forEach(([type,[min,max]])=>{const el=document.getElementById('tr-'+type);if(el)el.textContent=max===null?fmtRangeVal(min)+'+':fmtRangeVal(min)+'~'+fmtRangeVal(max);});}
 
 const map=L.map('map',{center:[34.6700,135.5000],zoom:13,zoomControl:true});
 let baseTile=null;
-function setBaseTile(lang){if(baseTile)map.removeLayer(baseTile);baseTile=L.tileLayer(`https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png?language=${lang}`,{attribution:'&copy; <a href="https://stadiamaps.com/">Stadia Maps</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',maxZoom:20}).addTo(map);}
+function setBaseTile(lang){baseTile=window.cityCreateBaseTile?window.cityCreateBaseTile(map,lang,baseTile):L.tileLayer(`https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png?language=${lang}`,{attribution:'&copy; <a href="https://stadiamaps.com/">Stadia Maps</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',maxZoom:20}).addTo(map);}
 setBaseTile('ko');
 attrLayer.addTo(map);airportLayer.addTo(map);routeLayer.addTo(map);
 const subwayLayer=L.layerGroup().addTo(map),circles=L.layerGroup().addTo(map),connectorLayer=L.layerGroup().addTo(map),markers=L.layerGroup().addTo(map),labelLayer=L.layerGroup().addTo(map),baseCircles={};
@@ -326,7 +326,7 @@ function makePopup(area){
   return `<div class="pu-wrap">${imgHtml}<div class="pu-head"><div class="pu-picto" style="background:${color};"><span class="material-symbols-outlined">${area.icon}</span></div><div><div class="pu-name">${name}${area.rec?`<span class="pu-badge">${t.rec}</span>`:''}</div><div class="pu-sub">${t.avgPrice}</div></div></div>${charTagsHtml?`<div class="pu-char-tags">${charTagsHtml}</div>`:''}<div class="pu-tags">${spotTags}</div><div class="pu-table">${rows}</div>${accessHtml}<div class="pu-btns" style="margin-top:10px"><a class="pu-btn pu-google" href="https://www.google.com/maps/search/${q}" target="_blank"><span class="material-symbols-outlined" style="font-size:13px;">map</span>Maps</a><a class="pu-btn pu-booking" href="https://www.booking.com/searchresults.html?ss=${q}" target="_blank"><span class="material-symbols-outlined" style="font-size:13px;">hotel</span>Booking</a></div></div>`;
 }
 
-function renderMap(){circles.clearLayers();connectorLayer.clearLayers();markers.clearLayers();labelLayer.clearLayers();Object.keys(baseCircles).forEach(k=>delete baseCircles[k]);AREAS.forEach(area=>{if(!LABEL_AREAS.includes(area.id))return;const priceColor=getColor(area.prices[currentType]),aColor=AREA_COLORS[area.id]||priceColor;const bc=L.circle(area.coords,{radius:area.radius||500,color:aColor,fillColor:aColor,fillOpacity:.22,weight:2,opacity:.8}).bindPopup(()=>makePopup(area),{maxWidth:320,minWidth:272}).addTo(circles);baseCircles[area.id]=bc;L.marker(area.coords,{icon:makeIcon(area,priceColor)}).bindPopup(()=>makePopup(area),{maxWidth:320,minWidth:272}).addTo(markers);const lo=LABEL_OFFSETS[area.id]||{off:[0.022,0],dir:'n'},labelPos=[area.coords[0]+lo.off[0],area.coords[1]+lo.off[1]],connector=L.polyline([area.coords,labelPos],{color:aColor,weight:1.5,opacity:.55,dashArray:'4 4'}).addTo(connectorLayer);L.circleMarker(area.coords,{radius:5,color:'rgba(255,255,255,.8)',weight:2,fillColor:aColor,fillOpacity:1}).addTo(connectorLayer);const lblMarker=L.marker(labelPos,{icon:makeAreaLabel(area,lo.dir),zIndexOffset:300,draggable:true}).addTo(labelLayer);lblMarker.on('drag',function(e){connector.setLatLngs([area.coords,e.target.getLatLng()]);});});}
+function renderMap(){circles.clearLayers();connectorLayer.clearLayers();markers.clearLayers();labelLayer.clearLayers();Object.keys(baseCircles).forEach(k=>delete baseCircles[k]);AREAS.forEach(area=>{if(!LABEL_AREAS.includes(area.id))return;const priceColor=getColor(area.prices[currentType]),aColor=priceColor;const bc=L.circle(area.coords,{radius:area.radius||500,color:aColor,fillColor:aColor,fillOpacity:.22,weight:2,opacity:.8}).bindPopup(()=>makePopup(area),{maxWidth:320,minWidth:272}).addTo(circles);baseCircles[area.id]=bc;L.marker(area.coords,{icon:makeIcon(area,priceColor)}).bindPopup(()=>makePopup(area),{maxWidth:320,minWidth:272}).addTo(markers);const lo=LABEL_OFFSETS[area.id]||{off:[0.022,0],dir:'n'},labelPos=[area.coords[0]+lo.off[0],area.coords[1]+lo.off[1]],connector=L.polyline([area.coords,labelPos],{color:aColor,weight:1.5,opacity:.55,dashArray:'4 4'}).addTo(connectorLayer);L.circleMarker(area.coords,{radius:5,color:'rgba(255,255,255,.8)',weight:2,fillColor:aColor,fillOpacity:1}).addTo(connectorLayer);const lblMarker=L.marker(labelPos,{icon:makeAreaLabel(area,lo.dir),zIndexOffset:300,draggable:true}).addTo(labelLayer);lblMarker.on('drag',function(e){connector.setLatLngs([area.coords,e.target.getLatLng()]);});});}
 function renderConnections(){subwayLayer.clearLayers();AREA_CONNECTIONS.forEach(line=>{L.polyline(line.coords,{color:'rgba(0,0,0,.4)',weight:line.weight+3,opacity:.6,lineJoin:'round',lineCap:'round'}).addTo(subwayLayer);L.polyline(line.coords,{color:line.color,weight:line.weight,opacity:.85,lineJoin:'round',lineCap:'round'}).bindTooltip(line[currentLang==='ja'?'ja':currentLang==='en'?'en':'ko'],{sticky:true,direction:'top',className:'subway-tip',offset:[0,-4]}).addTo(subwayLayer);});}
 function renderSubwayList(){const seen=new Set(),unique=AREA_CONNECTIONS.filter(l=>{if(seen.has(l.ko))return false;seen.add(l.ko);return true;});document.getElementById('subway-list').innerHTML=unique.map(l=>{const m=l.ko.match(/^(.+?)(?:\s*\((.+?)\))?$/),name=m[1],org=m[2]||'';return `<div class="sl-item"><div class="sl-swatch" style="background:${l.color}"></div><div class="sl-name">${name}${org?`<span class="sl-org">${org}</span>`:''}</div></div>`;}).join('');}
 
@@ -345,13 +345,47 @@ function toggleAirports(){airportVisible=!airportVisible;document.getElementById
 function openPlanner(){renderTravelTypeGrid();document.getElementById('planner-overlay').classList.add('open');}
 function closePlanner(){document.getElementById('planner-overlay').classList.remove('open');}
 function changeNights(d){plannerNights=Math.max(1,Math.min(14,plannerNights+d));document.getElementById('nights-val').textContent=plannerNights;}
-function renderTravelTypeGrid(){document.getElementById('types-sel-grid').innerHTML=TRAVEL_TYPES.map(tt=>{const active=selectedTypes.includes(tt.id)?'active':'',maxed=!selectedTypes.includes(tt.id)&&selectedTypes.length>=MAX_TYPE_SEL?'maxed':'',nm=currentLang==='en'?tt.en:currentLang==='ja'?tt.ja:tt.ko;return `<button class="ts-btn ${active} ${maxed}" onclick="toggleTravelType('${tt.id}')"><span class="ts-emoji">${tt.emoji}</span><span class="ts-name">${nm}</span></button>`;}).join('');document.getElementById('types-hint').textContent=`${selectedTypes.length}/${MAX_TYPE_SEL} ${currentLang==='en'?'selected':'선택됨'}`;}
-function toggleTravelType(id){if(selectedTypes.includes(id))selectedTypes=selectedTypes.filter(t=>t!==id);else if(selectedTypes.length<MAX_TYPE_SEL)selectedTypes.push(id);renderTravelTypeGrid();}
+function renderTravelTypeGrid(){document.getElementById('types-sel-grid').innerHTML=TRAVEL_TYPES.map(tt=>{const active=selectedTypes.includes(tt.id)?'active':'',nm=currentLang==='en'?tt.en:currentLang==='ja'?tt.ja:tt.ko;return `<button class="ts-btn ${active}" onclick="toggleTravelType('${tt.id}')"><span class="ts-emoji">${tt.emoji}</span><span class="ts-name">${nm}</span></button>`;}).join('');document.getElementById('types-hint').textContent=`${selectedTypes.length}/${MAX_TYPE_SEL} ${currentLang==='en'?'generation selected':'선택됨'}`;}
+function toggleTravelType(id){selectedTypes=selectedTypes.includes(id)?[]:[id];renderTravelTypeGrid();}
 const AREA_PROXIMITY={namba:['dotonbori','shinsaibashi','tennoji','shinsekai'],shinsaibashi:['namba','dotonbori','honmachi'],umeda:['nakanoshima','honmachi'],dotonbori:['namba','shinsaibashi'],osaka_castle:['honmachi','kyobashi','nakanoshima'],bay_usj:['nanko'],tennoji:['shinsekai','namba']};
 function isNearbyArea(a,b){return (AREA_PROXIMITY[a]||[]).includes(b)||(AREA_PROXIMITY[b]||[]).includes(a);}
-function buildItinerary(nights,types,budgetKrw,companion){let candidates=ATTRACTIONS.filter(a=>a.types.some(t=>types.includes(t)));candidates.sort((a,b)=>b.priority-a.priority);const budgetPerNightKrw=Math.round(budgetKrw*0.50/nights),budgetPerNightJpy=Math.round(budgetPerNightKrw/9.5),spotsPerDay=companion==='family'?3:4,used=new Set(),days=[];for(let d=0;d<Math.min(nights,7);d++){const daySpots=[],anchor=candidates.find(c=>!used.has(c.id));if(!anchor)break;used.add(anchor.id);daySpots.push(anchor);for(const c of candidates){if(used.has(c.id))continue;if(daySpots.length>=spotsPerDay)break;if(c.area===anchor.area||isNearbyArea(c.area,anchor.area)){daySpots.push(c);used.add(c.id);}}for(const c of candidates){if(used.has(c.id))continue;if(daySpots.length>=spotsPerDay)break;daySpots.push(c);used.add(c.id);}if(daySpots.length>0)days.push({day:d+1,spots:daySpots,color:DAY_COLORS[d%DAY_COLORS.length]});}const areaScores={};types.forEach(type=>{const scores=TYPE_AREA_SCORE[type]||{};Object.entries(scores).forEach(([area,score])=>{areaScores[area]=(areaScores[area]||0)+score;});});const recAreaId=Object.entries(areaScores).sort((a,b)=>b[1]-a[1])[0]?.[0]||'namba',recArea=AREAS.find(a=>a.id===recAreaId)||AREAS[0],recName=recArea[currentLang]||recArea.ko;return {days,recArea,recName,budgetPerNightJpy,recPriceJpy:recArea.prices.budget};}
+function buildItinerary(nights,types,budgetKrw,companion){const prefTypes=[...new Set(types.flatMap(t=>GENERATION_TYPE_PREFS[t]||[t]))];let candidates=ATTRACTIONS.filter(a=>a.types.some(t=>prefTypes.includes(t)));candidates.sort((a,b)=>b.priority-a.priority);const budgetPerNightKrw=Math.round(budgetKrw*0.50/nights),budgetPerNightJpy=Math.round(budgetPerNightKrw/9.5),spotsPerDay=companion==='family'?3:4,used=new Set(),days=[];for(let d=0;d<Math.min(nights,7);d++){const daySpots=[],anchor=candidates.find(c=>!used.has(c.id));if(!anchor)break;used.add(anchor.id);daySpots.push(anchor);for(const c of candidates){if(used.has(c.id))continue;if(daySpots.length>=spotsPerDay)break;if(c.area===anchor.area||isNearbyArea(c.area,anchor.area)){daySpots.push(c);used.add(c.id);}}for(const c of candidates){if(used.has(c.id))continue;if(daySpots.length>=spotsPerDay)break;daySpots.push(c);used.add(c.id);}if(daySpots.length>0)days.push({day:d+1,spots:daySpots,color:DAY_COLORS[d%DAY_COLORS.length]});}const areaScores={};types.forEach(type=>{const scores=TYPE_AREA_SCORE[type]||{};Object.entries(scores).forEach(([area,score])=>{areaScores[area]=(areaScores[area]||0)+score;});});const recAreaId=Object.entries(areaScores).sort((a,b)=>b[1]-a[1])[0]?.[0]||'namba',recArea=AREAS.find(a=>a.id===recAreaId)||AREAS[0],recName=recArea[currentLang]||recArea.ko;return {days,recArea,recName,budgetPerNightJpy,recPriceJpy:recArea.prices.budget};}
 function renderPlannerResult(result){const{days,recArea,recName,budgetPerNightJpy,recPriceJpy}=result,t=TR[currentLang],isEn=currentLang==='en',meta=AREA_META[recArea.id]||{},why=currentLang==='en'?meta.tagEn:meta.tagKo,dayCards=days.map(d=>{const steps=d.spots.map((s,i)=>{const sn=s.name[currentLang]||s.name.ko,sd=s.desc[currentLang]||s.desc.ko;return `<div class="step-row"><div class="step-num" style="background:${d.color}">${i+1}</div><span class="step-emoji">${s.emoji}</span><div class="step-body"><div class="step-name">${sn}</div><div class="step-desc">${sd}</div></div></div>`;}).join(''),dayLbl=isEn?`Day ${d.day}`:`${d.day}일차`;return `<div class="day-card"><div class="day-hd"><div class="day-dot" style="background:${d.color}"></div><div class="day-title">${dayLbl}</div><div class="day-zone">${d.spots.length} ${isEn?'stops':'개 스팟'}</div></div><div class="day-stops">${steps}</div></div>`;}).join('');document.getElementById('pn-result').style.display='block';document.getElementById('pn-result').innerHTML=`<div class="pn-result-hd">✨ ${isEn?'Recommended Area':'추천 숙소 위치'}</div><div class="rec-card"><div class="rec-emoji">🏯</div><div><div class="rec-label">${isEn?'Best area for your trip':'여행 동선 기준 추천'}</div><div class="rec-name">${recName}</div><div class="rec-why">${why||''}</div><div class="rec-price">${isEn?'Business hotel avg.':'비즈니스 호텔 평균'}: ${fmt(recPriceJpy)} ${t.perNight}</div></div></div>${dayCards}`;}
-function generateAndRender(){if(selectedTypes.length===0){alert(currentLang==='en'?'Please select at least 1 type.':'여행 유형을 최소 1개 선택해주세요.');return;}const budgetKrw=(parseFloat(document.getElementById('budget-input').value)||50)*10000,result=buildItinerary(plannerNights,selectedTypes,budgetKrw,currentCompanion);renderPlannerResult(result);routeLayer.clearLayers();result.days.forEach(day=>{const coords=day.spots.map(s=>s.coords);if(coords.length<2)return;L.polyline(coords,{color:day.color,weight:3,opacity:.85,dashArray:'6 4'}).addTo(routeLayer);for(let i=0;i<coords.length-1;i++){const[a,b]=[coords[i],coords[i+1]],ang=Math.atan2(a[0]-b[0],b[1]-a[1])*180/Math.PI;L.marker([(a[0]+b[0])/2,(a[1]+b[1])/2],{icon:L.divIcon({html:`<div style="transform:rotate(${ang}deg);color:${day.color};font-size:14px;opacity:.9">▼</div>`,className:'',iconSize:[14,14],iconAnchor:[7,7]}),interactive:false}).addTo(routeLayer);}coords.forEach((c,i)=>{const s=day.spots[i],sn=s.name[currentLang]||s.name.ko;L.marker(c,{icon:L.divIcon({html:`<div class="rb-wrap"><div class="rb-num" style="background:${day.color}">${i+1}</div><span class="rb-text">${s.emoji} ${sn}</span></div>`,className:'',iconSize:[null,28],iconAnchor:[10,14]}),zIndexOffset:500}).addTo(routeLayer);});});if(result.days.length>0){const all=result.days.flatMap(d=>d.spots.map(s=>s.coords));map.fitBounds(L.latLngBounds(all).pad(.15));}}
+function offsetRouteBannerPos(coord,dayIndex,stopIndex=0){const patterns=[[0.006,-0.008],[0.007,0.008],[-0.006,0.008],[-0.007,-0.008],[0.009,0],[-0.009,0]],p=patterns[(dayIndex+stopIndex)%patterns.length];return[coord[0]+p[0],coord[1]+p[1]];}
+function generateAndRender(){
+  if(routeFocusActive){clearRouteFocus();return;}
+  if(selectedTypes.length===0){alert(currentLang==='en'?'Please select one generation.':'세대별 여행추천을 1개 선택해주세요.');return;}
+  const budgetKrw=(parseFloat(document.getElementById('budget-input').value)||50)*10000,result=buildItinerary(plannerNights,selectedTypes,budgetKrw,currentCompanion);
+  renderPlannerResult(result);
+  routeLayer.clearLayers();
+  routeFocusAreaIds=new Set();
+  drawStayRecommendation(result.recArea,result.budgetPerNightJpy);
+  result.days.forEach(day=>{
+    const coords=day.spots.map(s=>s.coords);
+    if(coords.length===0)return;
+    day.spots.forEach(s=>{if(s.area)routeFocusAreaIds.add(s.area);});
+    const first=day.spots[0],firstName=first.name[currentLang]||first.name.ko;
+    const dayBannerPos=offsetRouteBannerPos(coords[0],day.day,0),dayConnector=L.polyline([coords[0],dayBannerPos],{color:day.color,weight:2,opacity:.75,dashArray:'4 4'}).addTo(routeLayer),dayMarker=L.marker(dayBannerPos,{icon:L.divIcon({html:`<div class="route-day-badge" style="--route-color:${day.color}"><span class="route-day-kicker">Day ${day.day}</span><span class="route-day-name">${firstName}</span></div>`,className:'',iconSize:[null,48],iconAnchor:[10,58]}),draggable:true,zIndexOffset:700}).addTo(routeLayer);dayMarker.on('drag',e=>dayConnector.setLatLngs([coords[0],e.target.getLatLng()]));
+    coords.forEach(c=>L.marker(c,{icon:L.divIcon({html:`<div class="route-stop-dot" style="--route-color:${day.color}"></div>`,className:'',iconSize:[30,30],iconAnchor:[15,15]}),interactive:false,zIndexOffset:420}).addTo(routeLayer));
+    if(coords.length<2)return;
+    L.polyline(coords,{color:'#0b0e1a',weight:12,opacity:.8,lineCap:'round',lineJoin:'round'}).addTo(routeLayer);
+    L.polyline(coords,{color:day.color,weight:7,opacity:1,dashArray:'10 7',lineCap:'round',lineJoin:'round'}).addTo(routeLayer);
+    for(let i=0;i<coords.length-1;i++){
+      const[a,b]=[coords[i],coords[i+1]],ang=Math.atan2(a[0]-b[0],b[1]-a[1])*180/Math.PI;
+      L.marker([(a[0]+b[0])/2,(a[1]+b[1])/2],{icon:L.divIcon({html:`<div class="route-arrow" style="--route-color:${day.color};transform:rotate(${ang}deg)">▼</div>`,className:'',iconSize:[22,22],iconAnchor:[11,11]}),interactive:false,zIndexOffset:450}).addTo(routeLayer);
+    }
+    coords.forEach((c,i)=>{const s=day.spots[i],sn=s.name[currentLang]||s.name.ko,labelPos=offsetRouteBannerPos(c,day.day,i+2),stopConnector=L.polyline([c,labelPos],{color:day.color,weight:1.5,opacity:.55,dashArray:'3 5'}).addTo(routeLayer),stopMarker=L.marker(labelPos,{icon:L.divIcon({html:`<div class="rb-wrap"><div class="rb-num" style="background:${day.color}">${i+1}</div><span class="rb-text">${s.emoji} ${sn}</span></div>`,className:'',iconSize:[null,34],iconAnchor:[10,17]}),draggable:true,zIndexOffset:500}).addTo(routeLayer);stopMarker.on('drag',e=>stopConnector.setLatLngs([c,e.target.getLatLng()]));});
+  });
+  if(result.days.length>0){const all=result.days.flatMap(d=>d.spots.map(s=>s.coords));all.push(result.recArea.coords);map.fitBounds(L.latLngBounds(all).pad(.15));}
+  applyRouteFocus();
+}
+
+function stayReasons(area,budgetPerNightJpy){const price=area.prices.budget||area.prices.standard||0,fitsBudget=!budgetPerNightJpy||price<=budgetPerNightJpy;if(currentLang==='en')return[`Budget: ${fmt(price)}${fitsBudget?' fits the nightly target':' keeps the stay cost predictable'}`,'Route: short hops to the recommended day plans','Safety: busy transit and hotel area for easier late returns'];if(currentLang==='ja')return[`予算: ${fmt(price)}で宿泊費を見積もりやすい`,'動線: おすすめ日程へ移動しやすい拠点','治安: 人通りと交通量があるエリア'];return[`예산: 1박 평균 ${fmt(price)}로 숙박비 예측이 쉬움`,'동선: 추천 일정 구간으로 이동하기 좋은 거점','치안: 역세권·호텔 밀집 지역이라 늦은 복귀가 비교적 수월'];}
+function drawStayRecommendation(area,budgetPerNightJpy){const name=area[currentLang]||area.ko,reasons=stayReasons(area,budgetPerNightJpy).map(r=>`<div class="stay-rec-reason">${r}</div>`).join(''),bannerPos=[area.coords[0]+0.018,area.coords[1]+0.026];routeFocusAreaIds.add(area.id);L.marker(area.coords,{icon:L.divIcon({html:`<div class="stay-hotel-pin">🏨</div>`,className:'',iconSize:[48,48],iconAnchor:[24,24]}),interactive:false,zIndexOffset:790}).addTo(routeLayer);const connector=L.polyline([area.coords,bannerPos],{color:'#ec4899',weight:3,opacity:.9,dashArray:'5 5'}).addTo(routeLayer),arrowAngle=Math.atan2(area.coords[0]-bannerPos[0],area.coords[1]-bannerPos[1])*180/Math.PI,arrowMarker=L.marker([(area.coords[0]+bannerPos[0])/2,(area.coords[1]+bannerPos[1])/2],{icon:L.divIcon({html:`<div class="stay-rec-arrow" style="transform:rotate(${arrowAngle}deg)">➜</div>`,className:'',iconSize:[24,24],iconAnchor:[12,12]}),interactive:false,zIndexOffset:795}).addTo(routeLayer);const banner=L.marker(bannerPos,{icon:L.divIcon({html:`<div class="stay-rec-banner"><div class="stay-rec-top"><div class="stay-rec-icon">🏨</div><div><div class="stay-rec-kicker">${currentLang==='en'?'Recommended stay':currentLang==='ja'?'おすすめ宿泊地':'추천 숙소 위치'}</div><div class="stay-rec-name">${name}</div></div></div><div class="stay-rec-reasons">${reasons}</div></div>`,className:'',iconSize:[300,150],iconAnchor:[0,150]}),draggable:true,zIndexOffset:800}).addTo(routeLayer);banner.on('drag',e=>{const p=e.target.getLatLng(),pos=[p.lat,p.lng],ang=Math.atan2(area.coords[0]-pos[0],area.coords[1]-pos[1])*180/Math.PI;connector.setLatLngs([area.coords,p]);arrowMarker.setLatLng([(area.coords[0]+pos[0])/2,(area.coords[1]+pos[1])/2]);arrowMarker.setIcon(L.divIcon({html:`<div class="stay-rec-arrow" style="transform:rotate(${ang}deg)">➜</div>`,className:'',iconSize:[24,24],iconAnchor:[12,12]}));});}
+function setPlannerRouteMode(active){const label=document.getElementById('pn-gen-label'),btn=document.querySelector('.pn-gen-btn');if(!label||!btn)return;label.textContent=active?(currentLang==='en'?'Hide Route':currentLang==='ja'?'おすすめルートを解除':'추천동선 표시 해제'):(currentLang==='en'?'Generate Route':currentLang==='ja'?'おすすめルート作成':'추천 동선 생성');btn.classList.toggle('route-clear-mode',active);}
+function fadeGroup(group,opacity){group.eachLayer(layer=>{if(layer.setOpacity)layer.setOpacity(opacity);if(layer.setStyle)layer.setStyle({opacity,fillOpacity:Math.min(opacity,.12)});});}
+function applyRouteFocus(){routeFocusActive=true;map.getContainer().classList.add('route-focus-map');fadeGroup(attrLayer,.12);fadeGroup(airportLayer,.12);fadeGroup(subwayLayer,.16);fadeGroup(connectorLayer,.12);fadeGroup(markers,.14);fadeGroup(labelLayer,.18);circles.eachLayer(layer=>layer.setStyle({opacity:.12,fillOpacity:.035,weight:1}));routeFocusAreaIds.forEach(id=>baseCircles[id]?.setStyle({opacity:1,fillOpacity:.26,weight:4}));routeLayer.eachLayer(layer=>{if(layer.bringToFront)layer.bringToFront();});setPlannerRouteMode(true);}
+function clearRouteFocus(){routeFocusActive=false;routeLayer.clearLayers();map.getContainer().classList.remove('route-focus-map');renderConnections();renderMap();renderAttractions();renderAirports();setPlannerRouteMode(false);}
 applyLang();updateTypeRanges();renderSubwayList();renderConnections();renderMap();
 </script>
 </body>

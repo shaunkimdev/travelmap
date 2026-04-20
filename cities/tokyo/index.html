@@ -175,17 +175,6 @@
       <div id="subway-list" class="subway-body"></div>
     </div>
 
-    <!-- 동반자 유형 -->
-    <div class="sec">
-      <div class="sec-title" id="sec-companion">동반자</div>
-      <div class="comp-grid">
-        <button class="comp-btn active" id="comp-solo"    onclick="setCompanion('solo')">   <span class="comp-emoji">🧳</span><span class="comp-label" id="cl-solo">혼자</span></button>
-        <button class="comp-btn"        id="comp-couple"  onclick="setCompanion('couple')"> <span class="comp-emoji">💑</span><span class="comp-label" id="cl-couple">커플</span></button>
-        <button class="comp-btn"        id="comp-friends" onclick="setCompanion('friends')"><span class="comp-emoji">👫</span><span class="comp-label" id="cl-friends">친구</span></button>
-        <button class="comp-btn"        id="comp-family"  onclick="setCompanion('family')"> <span class="comp-emoji">👨‍👩‍👧</span><span class="comp-label" id="cl-family">가족</span></button>
-      </div>
-    </div>
-
     <!-- 지도 표시 -->
     <div class="sec">
       <div class="sec-title" id="sec-overlay">지도 표시</div>
@@ -201,7 +190,7 @@
 </div><!-- /main -->
 
 <!-- ── PLANNER MODAL ── -->
-<div id="planner-overlay" class="planner-overlay" onclick="if(event.target===this)closePlanner()">
+<div id="planner-overlay" class="planner-overlay open">
   <div class="planner-panel">
     <div class="pn-head">
       <div class="pn-head-title">🗓️ <span id="pn-title">여행 일정 플래너</span></div>
@@ -220,14 +209,23 @@
         </div>
       </div>
       <div class="pn-section">
-        <div class="pn-sec-label" id="pn-lbl-types">여행 유형 <small style="text-transform:none;letter-spacing:0;font-weight:500">(최대 3개)</small></div>
-        <div class="types-sel-grid" id="types-sel-grid"></div>
-        <div class="types-hint" id="types-hint">0 / 3 선택됨</div>
+        <div class="pn-sec-label" id="sec-companion">동행 유형</div>
+        <div class="comp-grid">
+          <button class="comp-btn active" id="comp-solo"    onclick="setCompanion('solo')">   <span class="comp-emoji">🧳</span><span class="comp-label" id="cl-solo">혼자</span></button>
+          <button class="comp-btn"        id="comp-couple"  onclick="setCompanion('couple')"> <span class="comp-emoji">💑</span><span class="comp-label" id="cl-couple">커플</span></button>
+          <button class="comp-btn"        id="comp-friends" onclick="setCompanion('friends')"><span class="comp-emoji">👫</span><span class="comp-label" id="cl-friends">친구</span></button>
+          <button class="comp-btn"        id="comp-family"  onclick="setCompanion('family')"> <span class="comp-emoji">👨‍👩‍👧</span><span class="comp-label" id="cl-family">가족</span></button>
+        </div>
       </div>
       <div class="pn-section">
-        <div class="pn-sec-label" id="pn-lbl-budget">총 예산 (항공 제외)</div>
+        <div class="pn-sec-label" id="pn-lbl-types">세대별 여행추천 <small style="text-transform:none;letter-spacing:0;font-weight:500">(1개 선택)</small></div>
+        <div class="types-sel-grid" id="types-sel-grid"></div>
+        <div class="types-hint" id="types-hint">0 / 1 선택됨</div>
+      </div>
+      <div class="pn-section">
+        <div class="pn-sec-label" id="pn-lbl-budget">1인 총 여행 예산 <small style="text-transform:none;letter-spacing:0;font-weight:500">항공권 제외 · 숙박 포함</small></div>
         <div class="budget-row">
-          <input type="number" class="budget-input" id="budget-input" placeholder="예: 50" min="1" step="10">
+          <input type="number" class="budget-input" id="budget-input" placeholder="예: 50" min="1" step="10" aria-describedby="budget-suffix">
           <span class="budget-suffix" id="budget-suffix">만원</span>
         </div>
       </div>
@@ -241,6 +239,7 @@
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="../../shared/city-runtime.js"></script>
 <script>
 // ══════════════════════════════════════════
 // TRANSLATIONS
@@ -621,26 +620,28 @@ const AREA_IMAGES = {
 };
 
 // ══════════════════════════════════════════
-// PLANNER TRAVEL TYPES
+// PLANNER GENERATION TYPES
 // ══════════════════════════════════════════
 const TRAVEL_TYPES = [
-  {id:'food',     emoji:'🍜', ko:'맛집 투어',        en:'Food Tour',       ja:'グルメ巡り'},
-  {id:'landmark', emoji:'🏛️', ko:'유명 장소 도장깨기',en:'Famous Spots',    ja:'名所巡り'},
-  {id:'local',    emoji:'🎭', ko:'로컬 문화/컨텐츠', en:'Local Culture',   ja:'ローカル体験'},
-  {id:'activity', emoji:'🏃', ko:'액티비티',         en:'Activities',      ja:'アクティビティ'},
-  {id:'shopping', emoji:'🛍️', ko:'쇼핑',             en:'Shopping',        ja:'ショッピング'},
-  {id:'photo',    emoji:'📸', ko:'감성/사진',         en:'Photo Spots',     ja:'フォトスポット'},
+  {id:'teen',   emoji:'🎮', ko:'10대',      en:'Teens',  ja:'10代',     trendKo:'캐릭터 굿즈·사진 명소·체험형 스팟 중심'},
+  {id:'young',  emoji:'🛍️', ko:'20~30대',  en:'20s-30s',ja:'20〜30代', trendKo:'쇼핑·카페·야경·SNS 핫플 중심'},
+  {id:'middle', emoji:'🍽️', ko:'40~50대',  en:'40s-50s',ja:'40〜50代', trendKo:'맛집·대표 명소·편한 이동 중심'},
+  {id:'senior', emoji:'🌿', ko:'60대 이상', en:'60+',    ja:'60代以上', trendKo:'역사·공원·짧은 동선 중심'},
 ];
-const MAX_TYPE_SEL = 3;
+const MAX_TYPE_SEL = 1;
+const GENERATION_TYPE_PREFS = {
+  teen:['photo','shopping','activity'],
+  young:['shopping','food','photo','local'],
+  middle:['food','landmark','local'],
+  senior:['landmark','local','food'],
+};
 
 // Recommended area per travel type combination
 const TYPE_AREA_SCORE = {
-  food:     {shinjuku:9,ginza:8,shibuya:7,ueno:8,asakusa:7,akihabara:6,meguro:7,shinokubo:10},
-  landmark: {asakusa:10,tokyo:9,harajuku:8,shibuya:8,ueno:8,odaiba:7,roppongi:7},
-  local:    {asakusa:9,shimokitazawa:10,meguro:8,ueno:7,harajuku:7,yanaka:9},
-  activity: {odaiba:10,asakusa:8,shibuya:7,roppongi:7,skytree:8},
-  shopping: {shinjuku:10,shibuya:9,harajuku:8,akihabara:7,ginza:9,ikebukuro:8},
-  photo:    {shibuya:9,asakusa:9,harajuku:8,meguro:9,shimokitazawa:8,odaiba:7},
+  teen:   {shibuya:10,harajuku:10,akihabara:9,odaiba:8,shinjuku:7},
+  young:  {shinjuku:10,shibuya:10,harajuku:8,ginza:8,meguro:8,shimokitazawa:8},
+  middle: {ginza:10,asakusa:9,ueno:8,tokyo:8,shinjuku:7},
+  senior: {asakusa:10,ueno:9,tokyo:8,ginza:7,yanaka:8},
 };
 const DAY_COLORS = ['#3b82f6','#22c55e','#f97316','#a855f7','#ef4444','#06b6d4','#eab308'];
 
@@ -673,6 +674,14 @@ function fmt(jpy){
 }
 
 function getColor(price){
+  if(price===null||price===undefined) return '#4a5f78';
+  const values = AREAS.map(a=>a.prices[currentType]).filter(v=>v!==null&&v!==undefined).sort((a,b)=>a-b);
+  if(values.length<2) return COLORS[2];
+  const index = values.findIndex(v=>price<=v);
+  const rank = (index<0?values.length-1:index)/(values.length-1);
+  return COLORS[Math.min(5, Math.floor(rank*6))];
+}
+function getColorOld(price){
   for(let i=0;i<THRESH.length;i++) if(price<THRESH[i]) return COLORS[i];
   return COLORS[5];
 }
@@ -709,12 +718,12 @@ function updateTypeRanges(){
 // ══════════════════════════════════════════
 const map = L.map('map',{center:[35.6900,139.7500],zoom:12,zoomControl:true});
 let baseTile = null;
+let routeFocusActive = false;
+let routeFocusAreaIds = new Set();
 function setBaseTile(lang){
-  if(baseTile) map.removeLayer(baseTile);
-  baseTile = L.tileLayer(
-    `https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png?language=${lang}`,
-    {attribution:'&copy; <a href="https://stadiamaps.com/">Stadia Maps</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',maxZoom:20}
-  ).addTo(map);
+  baseTile = window.cityCreateBaseTile
+    ? window.cityCreateBaseTile(map, lang, baseTile)
+    : L.tileLayer(`https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png?language=${lang}`,{attribution:'&copy; <a href="https://stadiamaps.com/">Stadia Maps</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',maxZoom:20}).addTo(map);
 }
 setBaseTile('ko');
 attrLayer.addTo(map);
@@ -877,7 +886,7 @@ function renderMap(){
   AREAS.forEach(area=>{
     if(!LABEL_AREAS.includes(area.id)) return;
     const priceColor = getColor(area.prices[currentType]);
-    const aColor     = AREA_COLORS[area.id] || priceColor;
+    const aColor     = priceColor;
 
     const bc = L.circle(area.coords,{
       radius:500, color:aColor, fillColor:aColor,
@@ -1146,42 +1155,86 @@ function changeNights(delta){
 function renderTravelTypeGrid(){
   document.getElementById('types-sel-grid').innerHTML = TRAVEL_TYPES.map(tt=>{
     const active  = selectedTypes.includes(tt.id) ? 'active' : '';
-    const maxed   = !selectedTypes.includes(tt.id) && selectedTypes.length>=MAX_TYPE_SEL ? 'maxed' : '';
     const nm = currentLang==='en'?tt.en:currentLang==='ja'?tt.ja:tt.ko;
-    return `<button class="ts-btn ${active} ${maxed}" onclick="toggleTravelType('${tt.id}')">
+    return `<button class="ts-btn ${active}" onclick="toggleTravelType('${tt.id}')">
       <span class="ts-emoji">${tt.emoji}</span>
       <span class="ts-name">${nm}</span>
     </button>`;
   }).join('');
   document.getElementById('types-hint').textContent =
-    currentLang==='en' ? `${selectedTypes.length}/${MAX_TYPE_SEL} selected`
-    : currentLang==='ja' ? `${selectedTypes.length}/${MAX_TYPE_SEL} 選択済み`
+    currentLang==='en' ? `${selectedTypes.length}/${MAX_TYPE_SEL} generation selected`
+    : currentLang==='ja' ? `${selectedTypes.length}/${MAX_TYPE_SEL} 世代を選択`
     : `${selectedTypes.length}/${MAX_TYPE_SEL} 선택됨`;
 }
 function toggleTravelType(id){
-  if(selectedTypes.includes(id)){
-    selectedTypes = selectedTypes.filter(t=>t!==id);
-  } else if(selectedTypes.length < MAX_TYPE_SEL){
-    selectedTypes.push(id);
-  }
+  selectedTypes = selectedTypes.includes(id) ? [] : [id];
   renderTravelTypeGrid();
 }
 
 function generateAndRender(){
+  if(routeFocusActive){
+    clearRouteFocus();
+    return;
+  }
   if(selectedTypes.length===0){
-    alert(currentLang==='en'?'Please select at least one travel type.':currentLang==='ja'?'旅行タイプを1つ以上選んでください。':'여행 유형을 최소 1개 선택해주세요.');
+    alert(currentLang==='en'?'Please select one generation.':currentLang==='ja'?'世代別おすすめを1つ選んでください。':'세대별 여행추천을 1개 선택해주세요.');
     return;
   }
   const budgetRaw = parseFloat(document.getElementById('budget-input').value) || 50;
   const budgetKrw = budgetRaw * 10000; // 만원 → 원
   const result = buildItinerary(plannerNights, selectedTypes, budgetKrw, currentCompanion);
   renderPlannerResult(result);
-  drawRouteOnMap(result.days);
+  drawRouteOnMap(result.days, result.recArea, result.budgetPerNightJpy);
+  applyRouteFocus();
+}
+
+function setPlannerRouteMode(active){
+  const label=document.getElementById('pn-gen-label');
+  const btn=document.querySelector('.pn-gen-btn');
+  if(!label||!btn)return;
+  label.textContent=active
+    ? (currentLang==='en'?'Hide Route':currentLang==='ja'?'おすすめルートを解除':'추천동선 표시 해제')
+    : (currentLang==='en'?'Generate Route':currentLang==='ja'?'おすすめルート作成':'추천 동선 생성');
+  btn.classList.toggle('route-clear-mode',active);
+}
+
+function fadeGroup(group, opacity){
+  group.eachLayer(layer=>{
+    if(layer.setOpacity) layer.setOpacity(opacity);
+    if(layer.setStyle) layer.setStyle({opacity,fillOpacity:Math.min(opacity,.12)});
+  });
+}
+
+function applyRouteFocus(){
+  routeFocusActive=true;
+  map.getContainer().classList.add('route-focus-map');
+  fadeGroup(attrLayer,.12);
+  fadeGroup(airportLayer,.12);
+  fadeGroup(subwayLayer,.16);
+  fadeGroup(connectorLayer,.12);
+  fadeGroup(markers,.14);
+  fadeGroup(labelLayer,.18);
+  circles.eachLayer(layer=>layer.setStyle({opacity:.12,fillOpacity:.035,weight:1}));
+  routeFocusAreaIds.forEach(id=>baseCircles[id]?.setStyle({opacity:1,fillOpacity:.26,weight:4}));
+  routeLayer.eachLayer(layer=>{if(layer.bringToFront)layer.bringToFront();});
+  setPlannerRouteMode(true);
+}
+
+function clearRouteFocus(){
+  routeFocusActive=false;
+  routeLayer.clearLayers();
+  map.getContainer().classList.remove('route-focus-map');
+  renderConnections();
+  renderMap();
+  renderAttractions();
+  renderAirports();
+  setPlannerRouteMode(false);
 }
 
 function buildItinerary(nights, types, budgetKrw, companion){
   // Filter attractions by type
-  let candidates = ATTRACTIONS.filter(a=>a.types.some(t=>types.includes(t)));
+  const prefTypes = [...new Set(types.flatMap(t=>GENERATION_TYPE_PREFS[t]||[t]))];
+  let candidates = ATTRACTIONS.filter(a=>a.types.some(t=>prefTypes.includes(t)));
   candidates.sort((a,b)=>b.priority-a.priority);
 
   // Budget per night for accommodation (50% of budget)
@@ -1269,7 +1322,7 @@ function renderPlannerResult(result){
   const priceLbl= isLangEn?'Budget hotel avg.':isLangJa?'ビジネスホテル平均':'비즈니스 호텔 평균';
 
   const dayCards = days.map(d=>{
-    const zone = d.spots[0]?.(d.spots[0][currentLang]||d.spots[0].ko):'';
+    const zone = d.spots[0] ? (d.spots[0].area || d.spots[0].name?.[currentLang] || d.spots[0].name?.ko || '') : '';
     const steps = d.spots.map((s,i)=>{
       const sn = s.name[currentLang]||s.name.ko;
       const sd = s.desc[currentLang]||s.desc.ko;
@@ -1308,20 +1361,83 @@ function renderPlannerResult(result){
     ${dayCards}`;
 }
 
-function drawRouteOnMap(days){
+function stayReasons(area, budgetPerNightJpy){
+  const price=area.prices.budget||area.prices.standard||0;
+  const fitsBudget=!budgetPerNightJpy||price<=budgetPerNightJpy;
+  if(currentLang==='en') return [
+    `Budget: ${fmt(price)}${fitsBudget?' fits the nightly target':' keeps the stay cost predictable'}`,
+    'Route: short hops to the recommended day plans',
+    'Safety: busy transit and hotel area for easier late returns'
+  ];
+  if(currentLang==='ja') return [
+    `予算: ${fmt(price)}で宿泊費を見積もりやすい`,
+    '動線: おすすめ日程へ移動しやすい拠点',
+    '治安: 人通りと交通量があるエリア'
+  ];
+  return [
+    `예산: 1박 평균 ${fmt(price)}로 숙박비 예측이 쉬움`,
+    '동선: 추천 일정 구간으로 이동하기 좋은 거점',
+    '치안: 역세권·호텔 밀집 지역이라 늦은 복귀가 비교적 수월'
+  ];
+}
+
+function drawStayRecommendation(area, budgetPerNightJpy){
+  const name=area[currentLang]||area.ko;
+  const reasons=stayReasons(area, budgetPerNightJpy).map(r=>`<div class="stay-rec-reason">${r}</div>`).join('');
+  routeFocusAreaIds.add(area.id);
+  const bannerPos=[area.coords[0]+0.018,area.coords[1]+0.026];
+  L.marker(area.coords,{icon:L.divIcon({html:`<div class="stay-hotel-pin">🏨</div>`,className:'',iconSize:[48,48],iconAnchor:[24,24]}),interactive:false,zIndexOffset:790}).addTo(routeLayer);
+  const connector=L.polyline([area.coords,bannerPos],{color:'#f97316',weight:3,opacity:.9,dashArray:'5 5'}).addTo(routeLayer);
+  const arrowAngle=Math.atan2(area.coords[0]-bannerPos[0],area.coords[1]-bannerPos[1])*180/Math.PI;
+  const arrowMarker=L.marker([(area.coords[0]+bannerPos[0])/2,(area.coords[1]+bannerPos[1])/2],{icon:L.divIcon({html:`<div class="stay-rec-arrow" style="transform:rotate(${arrowAngle}deg)">➜</div>`,className:'',iconSize:[24,24],iconAnchor:[12,12]}),interactive:false,zIndexOffset:795}).addTo(routeLayer);
+  const banner=L.marker(bannerPos,{icon:L.divIcon({html:`<div class="stay-rec-banner"><div class="stay-rec-top"><div class="stay-rec-icon">🏨</div><div><div class="stay-rec-kicker">${currentLang==='en'?'Recommended stay':currentLang==='ja'?'おすすめ宿泊地':'추천 숙소 위치'}</div><div class="stay-rec-name">${name}</div></div></div><div class="stay-rec-reasons">${reasons}</div></div>`,className:'',iconSize:[300,150],iconAnchor:[0,150]}),draggable:true,zIndexOffset:800}).addTo(routeLayer);
+  banner.on('drag',e=>{const p=e.target.getLatLng(),pos=[p.lat,p.lng],ang=Math.atan2(area.coords[0]-pos[0],area.coords[1]-pos[1])*180/Math.PI;connector.setLatLngs([area.coords,p]);arrowMarker.setLatLng([(area.coords[0]+pos[0])/2,(area.coords[1]+pos[1])/2]);arrowMarker.setIcon(L.divIcon({html:`<div class="stay-rec-arrow" style="transform:rotate(${ang}deg)">➜</div>`,className:'',iconSize:[24,24],iconAnchor:[12,12]}));});
+}
+
+function offsetRouteBannerPos(coord, dayIndex, stopIndex=0){
+  const patterns=[[0.006,-0.008],[0.007,0.008],[-0.006,0.008],[-0.007,-0.008],[0.009,0],[-0.009,0]];
+  const p=patterns[(dayIndex+stopIndex)%patterns.length];
+  return [coord[0]+p[0],coord[1]+p[1]];
+}
+
+function drawRouteOnMap(days, recArea, budgetPerNightJpy){
   routeLayer.clearLayers();
+  routeFocusAreaIds = new Set();
+  if(recArea) drawStayRecommendation(recArea, budgetPerNightJpy);
   days.forEach(day=>{
     const coords = day.spots.map(s=>s.coords);
+    if(coords.length===0) return;
+    day.spots.forEach(s=>{if(s.area)routeFocusAreaIds.add(s.area);});
+    const firstSpot = day.spots[0];
+    const firstName = firstSpot.name[currentLang] || firstSpot.name.ko;
+    const dayBannerPos=offsetRouteBannerPos(coords[0],day.day,0);
+    const dayConnector=L.polyline([coords[0],dayBannerPos],{color:day.color,weight:2,opacity:.75,dashArray:'4 4'}).addTo(routeLayer);
+    const dayMarker=L.marker(dayBannerPos,{
+      icon:L.divIcon({
+        html:`<div class="route-day-badge" style="--route-color:${day.color}"><span class="route-day-kicker">Day ${day.day}</span><span class="route-day-name">${firstName}</span></div>`,
+        className:'', iconSize:[null,48], iconAnchor:[10,58]
+      }),
+      draggable:true,
+      zIndexOffset:700
+    }).addTo(routeLayer);
+    dayMarker.on('drag',e=>dayConnector.setLatLngs([coords[0],e.target.getLatLng()]));
+    coords.forEach(c=>{
+      L.marker(c,{
+        icon:L.divIcon({html:`<div class="route-stop-dot" style="--route-color:${day.color}"></div>`,className:'',iconSize:[30,30],iconAnchor:[15,15]}),
+        interactive:false,
+        zIndexOffset:420
+      }).addTo(routeLayer);
+    });
     if(coords.length<2) return;
-    // Draw polyline
-    L.polyline(coords,{color:day.color,weight:3,opacity:.85,dashArray:'6 4'}).addTo(routeLayer);
+    L.polyline(coords,{color:'#0b0e1a',weight:12,opacity:.8,lineCap:'round',lineJoin:'round'}).addTo(routeLayer);
+    L.polyline(coords,{color:day.color,weight:7,opacity:1,dashArray:'10 7',lineCap:'round',lineJoin:'round'}).addTo(routeLayer);
     // Arrow markers at midpoints
     for(let i=0;i<coords.length-1;i++){
       const [lat1,lng1]=coords[i], [lat2,lng2]=coords[i+1];
       const mLat=(lat1+lat2)/2, mLng=(lng1+lng2)/2;
       const ang = Math.atan2(lat2-lat1, lng2-lng1)*180/Math.PI - 90;
       L.marker([mLat,mLng],{
-        icon:L.divIcon({html:`<div style="transform:rotate(${ang}deg);color:${day.color};font-size:14px;line-height:1;opacity:.9">▼</div>`,className:'',iconSize:[14,14],iconAnchor:[7,7]}),
+        icon:L.divIcon({html:`<div class="route-arrow" style="--route-color:${day.color};transform:rotate(${ang}deg)">▼</div>`,className:'',iconSize:[22,22],iconAnchor:[11,11]}),
         interactive:false, zIndexOffset:100
       }).addTo(routeLayer);
     }
@@ -1331,14 +1447,18 @@ function drawRouteOnMap(days){
       const sn = s.name[currentLang]||s.name.ko;
       const icon = L.divIcon({
         html:`<div class="rb-wrap"><div class="rb-num" style="background:${day.color}">${i+1}</div><span class="rb-text">${s.emoji} ${sn}</span></div>`,
-        className:'', iconSize:[null,28], iconAnchor:[10,14]
+        className:'', iconSize:[null,34], iconAnchor:[10,17]
       });
-      L.marker(c,{icon, zIndexOffset:500}).addTo(routeLayer);
+      const labelPos=offsetRouteBannerPos(c,day.day,i+2);
+      const stopConnector=L.polyline([c,labelPos],{color:day.color,weight:1.5,opacity:.55,dashArray:'3 5'}).addTo(routeLayer);
+      const stopMarker=L.marker(labelPos,{icon,draggable:true,zIndexOffset:500}).addTo(routeLayer);
+      stopMarker.on('drag',e=>stopConnector.setLatLngs([c,e.target.getLatLng()]));
     });
   });
   // Fit map to route
   if(days.length>0){
     const all = days.flatMap(d=>d.spots.map(s=>s.coords));
+    if(recArea) all.push(recArea.coords);
     map.fitBounds(L.latLngBounds(all).pad(.15));
   }
 }

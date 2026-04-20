@@ -113,15 +113,6 @@
       <div id="subway-list" class="subway-body"></div>
     </div>
     <div class="sec">
-      <div class="sec-title" id="sec-companion">👥 동행 유형</div>
-      <div class="comp-grid">
-        <button class="comp-btn active" id="comp-solo"    onclick="setCompanion('solo')">   <span class="comp-emoji">🧍</span><span class="comp-label" id="cl-solo">혼자</span></button>
-        <button class="comp-btn"        id="comp-couple"  onclick="setCompanion('couple')"> <span class="comp-emoji">👫</span><span class="comp-label" id="cl-couple">커플</span></button>
-        <button class="comp-btn"        id="comp-friends" onclick="setCompanion('friends')"><span class="comp-emoji">👯</span><span class="comp-label" id="cl-friends">친구들</span></button>
-        <button class="comp-btn"        id="comp-family"  onclick="setCompanion('family')"> <span class="comp-emoji">👨‍👩‍👧</span><span class="comp-label" id="cl-family">가족</span></button>
-      </div>
-    </div>
-    <div class="sec">
       <div class="sec-title" id="sec-overlays">🗺️ 지도 레이어</div>
       <div class="ovl-grid">
         <button class="ovl-btn" id="ovl-attr"    onclick="toggleAttractions()"><span class="ovl-pip"></span><span id="ol-attr">명소 표시</span></button>
@@ -133,7 +124,7 @@
 </div>
 
 <!-- PLANNER OVERLAY -->
-<div class="planner-overlay" id="planner-overlay" onclick="if(event.target===this)closePlanner()">
+<div class="planner-overlay open" id="planner-overlay">
   <div class="planner-panel">
     <div class="pn-head">
       <div class="pn-head-title"><span class="material-symbols-outlined" style="font-size:16px;">explore</span><span id="pn-title">서울 여행 플래너</span></div>
@@ -152,14 +143,23 @@
         </div>
       </div>
       <div class="pn-section">
-        <div class="pn-sec-label" id="pn-type-label">여행 유형 <span style="font-weight:400;text-transform:none;letter-spacing:0;">(최대 3개)</span></div>
-        <div class="types-sel-grid" id="pn-type-grid"></div>
-        <div class="types-hint" id="pn-type-hint">0 / 3 선택됨</div>
+        <div class="pn-sec-label" id="sec-companion">동행 유형</div>
+        <div class="comp-grid">
+          <button class="comp-btn active" id="comp-solo"    onclick="setCompanion('solo')">   <span class="comp-emoji">🧍</span><span class="comp-label" id="cl-solo">혼자</span></button>
+          <button class="comp-btn"        id="comp-couple"  onclick="setCompanion('couple')"> <span class="comp-emoji">👫</span><span class="comp-label" id="cl-couple">커플</span></button>
+          <button class="comp-btn"        id="comp-friends" onclick="setCompanion('friends')"><span class="comp-emoji">👯</span><span class="comp-label" id="cl-friends">친구들</span></button>
+          <button class="comp-btn"        id="comp-family"  onclick="setCompanion('family')"> <span class="comp-emoji">👨‍👩‍👧</span><span class="comp-label" id="cl-family">가족</span></button>
+        </div>
       </div>
       <div class="pn-section">
-        <div class="pn-sec-label" id="pn-budget-label">예산 (항공료 제외)</div>
+        <div class="pn-sec-label" id="pn-type-label">세대별 여행추천 <span style="font-weight:400;text-transform:none;letter-spacing:0;">(1개 선택)</span></div>
+        <div class="types-sel-grid" id="pn-type-grid"></div>
+        <div class="types-hint" id="pn-type-hint">0 / 1 선택됨</div>
+      </div>
+      <div class="pn-section">
+        <div class="pn-sec-label" id="pn-budget-label">1인 총 여행 예산 <small style="text-transform:none;letter-spacing:0;font-weight:500">항공권 제외 · 숙박 포함</small></div>
         <div class="budget-row">
-          <input class="budget-input" type="number" id="pn-budget" placeholder="300000" min="0" step="10000"/>
+          <input class="budget-input" type="number" id="pn-budget" placeholder="300000" min="0" step="10000" aria-describedby="pn-budget-suffix"/>
           <span class="budget-suffix" id="pn-budget-suffix">KRW / 1인</span>
         </div>
       </div>
@@ -173,6 +173,7 @@
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="../../shared/city-runtime.js"></script>
 <script>
 const TR = {
   ko:{title:'서울 숙박 가격 지도',sub:'위치별 평균 숙박 요금 · Booking.com 기준',hint:'지역 클릭 → 상세 가격 확인 / ★ = 추천',secType:'숙박 유형 선택',secLegend:'가격 색상 기준',secNotes:'안내사항',secSubway:'🚇 지하철 노선',types:{capsule:'캡슐호텔',hostel:'호스텔/게하',budget:'비즈니스 ★★',standard:'스탠다드 ★★★',premium:'프리미엄 ★★★★',luxury:'럭셔리 ★★★★★'},legLabels:['저렴','보통','비쌈','고급'],legColors:['매우 저렴','저렴','보통','약간 비쌈','비쌈','럭셔리'],notes:['절대적인 수치 아님 (참고용)','Booking.com 평균가 기준','성수기·이벤트 시 변동 큼','별(★)은 추천 숙박 위치','최종 업데이트 2024/08'],rec:'추천',perNight:'/박',avgPrice:'평균 숙박 가격 (1박 · 2인 기준)',unit:'개 지역',na:'해당 없음',expand:'펼치기',collapse:'접기'},
@@ -273,21 +274,23 @@ const AREA_IMAGES = {
   jongno3ga:'https://picsum.photos/seed/jongno3ga/400/100',seoulstation:'https://picsum.photos/seed/seoulstation/400/100',
 };
 const TRAVEL_TYPES = [
-  {id:'food',emoji:'🍽️',ko:'맛집투어',en:'Foodie Tour',ja:'グルメツアー'},
-  {id:'landmark',emoji:'🏛️',ko:'유명 장소',en:'Landmarks',ja:'名所巡り'},
-  {id:'local',emoji:'🌿',ko:'로컬 체험',en:'Local Vibes',ja:'ローカル体験'},
-  {id:'activity',emoji:'🎢',ko:'액티비티',en:'Activities',ja:'アクティビティ'},
-  {id:'shopping',emoji:'🛍️',ko:'쇼핑',en:'Shopping',ja:'ショッピング'},
-  {id:'photo',emoji:'📸',ko:'사진 명소',en:'Photo Spots',ja:'フォトスポット'},
+  {id:'teen',emoji:'🎧',ko:'10대',en:'Teens',ja:'10代'},
+  {id:'young',emoji:'☕',ko:'20~30대',en:'20s-30s',ja:'20〜30代'},
+  {id:'middle',emoji:'🍽️',ko:'40~50대',en:'40s-50s',ja:'40〜50代'},
+  {id:'senior',emoji:'🌿',ko:'60대 이상',en:'60+',ja:'60代以上'},
 ];
-const MAX_TYPE_SEL = 3;
+const MAX_TYPE_SEL = 1;
+const GENERATION_TYPE_PREFS = {
+  teen:['photo','shopping','activity'],
+  young:['food','shopping','photo','local'],
+  middle:['landmark','food','local'],
+  senior:['landmark','local','food'],
+};
 const TYPE_AREA_SCORE = {
-  food:{myeongdong:10,dongdaemun:9,euljiro:8,insadong:8,itaewon:8,hongdae:7},
-  landmark:{insadong:10,gwanghwamun:9,jongno3ga:8,jamsil:7,itaewon:6},
-  local:{euljiro:9,jongno3ga:8,hongdae:8,itaewon:7,sinchon:6},
-  activity:{jamsil:10,hongdae:8,itaewon:7,gangnam:7,dongdaemun:7},
-  shopping:{myeongdong:10,dongdaemun:9,gangnam:8,hongdae:7,seoulstation:6},
-  photo:{insadong:9,euljiro:8,gwanghwamun:8,itaewon:7,jamsil:7},
+  teen:{hongdae:10,myeongdong:9,jamsil:9,dongdaemun:8,sinchon:8},
+  young:{hongdae:10,euljiro:9,itaewon:9,gangnam:8,myeongdong:8},
+  middle:{insadong:10,gwanghwamun:9,myeongdong:8,dongdaemun:8,itaewon:7},
+  senior:{insadong:10,gwanghwamun:10,jongno3ga:9,seoulstation:8,myeongdong:7},
 };
 const DAY_COLORS = ['#6366f1','#f97316','#22c55e','#ec4899','#14b8a6','#f59e0b'];
 
@@ -296,18 +299,20 @@ const THRESH=[30000,60000,100000,160000,250000];
 const COLORS=['#22c55e','#84cc16','#eab308','#f97316','#ef4444','#a855f7'];
 let currentLang='ko',currentType='capsule',currentCurrency='KRW';
 let currentCompanion='solo',selectedTypes=[],plannerNights=3;
+let routeFocusActive=false;
+let routeFocusAreaIds=new Set();
 let attrVisible=false,airportVisible=false;
 const EX={KRW:1,JPY:0.105,USD:0.00075},SYM={KRW:'₩',JPY:'¥',USD:'$'};
 const TYPE_RANGES_KRW={capsule:[20000,32000],hostel:[25000,42000],budget:[58000,95000],standard:[95000,165000],premium:[165000,320000],luxury:[350000,null]};
 
 function fmt(krw){if(krw===null||krw===undefined)return '—';return SYM[currentCurrency]+Math.round(krw*EX[currentCurrency]).toLocaleString();}
-function getColor(p){if(p===null)return '#4a5f78';for(let i=0;i<THRESH.length;i++)if(p<THRESH[i])return COLORS[i];return COLORS[5];}
+function getColor(p){if(p===null)return '#4a5f78';const values=AREAS.map(a=>a.prices[currentType]).filter(v=>v!==null&&v!==undefined).sort((a,b)=>a-b);if(values.length<2)return COLORS[2];const index=values.findIndex(v=>p<=v),rank=(index<0?values.length-1:index)/(values.length-1);return COLORS[Math.min(5,Math.floor(rank*6))];}
 function fmtRangeVal(krw){const v=krw*EX[currentCurrency];if(currentCurrency==='KRW')return SYM.KRW+Math.round(v/1000).toLocaleString()+'k';if(currentCurrency==='JPY')return SYM.JPY+Math.round(v).toLocaleString();return SYM.USD+Math.round(v).toLocaleString();}
 function updateTypeRanges(){Object.entries(TYPE_RANGES_KRW).forEach(([type,[min,max]])=>{const el=document.getElementById('tr-'+type);if(el)el.textContent=max===null?fmtRangeVal(min)+'+':fmtRangeVal(min)+'~'+fmtRangeVal(max);});}
 
 const map=L.map('map',{center:[37.5400,126.9900],zoom:12,zoomControl:true});
 let baseTile=null;
-function setBaseTile(lang){if(baseTile)map.removeLayer(baseTile);baseTile=L.tileLayer(`https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png?language=${lang}`,{attribution:'&copy; <a href="https://stadiamaps.com/">Stadia Maps</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',maxZoom:20}).addTo(map);}
+function setBaseTile(lang){baseTile=window.cityCreateBaseTile?window.cityCreateBaseTile(map,lang,baseTile):L.tileLayer(`https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png?language=${lang}`,{attribution:'&copy; <a href="https://stadiamaps.com/">Stadia Maps</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',maxZoom:20}).addTo(map);}
 setBaseTile('ko');
 
 const subwayLayer=L.layerGroup().addTo(map),circles=L.layerGroup().addTo(map),connectorLayer=L.layerGroup().addTo(map),markers=L.layerGroup().addTo(map),labelLayer=L.layerGroup().addTo(map),baseCircles={};
@@ -334,7 +339,7 @@ function makePopup(area){
   return `<div class="pu-wrap">${imgHtml}${charTagsHtml}<div class="pu-head"><div class="pu-picto" style="background:${color};"><span class="material-symbols-outlined">${area.icon}</span></div><div><div class="pu-name">${name}${area.rec?`<span class="pu-badge">${t.rec}</span>`:''}</div><div class="pu-sub">${t.avgPrice}</div></div></div><div class="pu-tags">${tags}</div><div class="pu-table">${rows}</div>${accessHtml}<div class="pu-btns"><a class="pu-btn pu-google" href="https://www.google.com/maps/search/${q}" target="_blank"><span class="material-symbols-outlined" style="font-size:13px;">map</span>Maps</a><a class="pu-btn pu-booking" href="https://www.booking.com/searchresults.html?ss=${q}" target="_blank"><span class="material-symbols-outlined" style="font-size:13px;">hotel</span>Booking</a></div></div>`;
 }
 
-function renderMap(){circles.clearLayers();connectorLayer.clearLayers();markers.clearLayers();labelLayer.clearLayers();Object.keys(baseCircles).forEach(k=>delete baseCircles[k]);AREAS.forEach(area=>{if(!LABEL_AREAS.includes(area.id))return;const priceColor=getColor(area.prices[currentType]),aColor=AREA_COLORS[area.id]||priceColor;const bc=L.circle(area.coords,{radius:area.radius||500,color:aColor,fillColor:aColor,fillOpacity:.22,weight:2,opacity:.8}).bindPopup(()=>makePopup(area),{maxWidth:320,minWidth:272}).addTo(circles);baseCircles[area.id]=bc;L.marker(area.coords,{icon:makeIcon(area,priceColor)}).bindPopup(()=>makePopup(area),{maxWidth:320,minWidth:272}).addTo(markers);const lo=LABEL_OFFSETS[area.id]||{off:[0.022,0],dir:'n'},labelPos=[area.coords[0]+lo.off[0],area.coords[1]+lo.off[1]],connector=L.polyline([area.coords,labelPos],{color:aColor,weight:1.5,opacity:.55,dashArray:'4 4'}).addTo(connectorLayer);L.circleMarker(area.coords,{radius:5,color:'rgba(255,255,255,.8)',weight:2,fillColor:aColor,fillOpacity:1}).addTo(connectorLayer);const lblMarker=L.marker(labelPos,{icon:makeAreaLabel(area,lo.dir),zIndexOffset:300,draggable:true}).addTo(labelLayer);lblMarker.on('drag',function(e){connector.setLatLngs([area.coords,e.target.getLatLng()]);});});}
+function renderMap(){circles.clearLayers();connectorLayer.clearLayers();markers.clearLayers();labelLayer.clearLayers();Object.keys(baseCircles).forEach(k=>delete baseCircles[k]);AREAS.forEach(area=>{if(!LABEL_AREAS.includes(area.id))return;const priceColor=getColor(area.prices[currentType]),aColor=priceColor;const bc=L.circle(area.coords,{radius:area.radius||500,color:aColor,fillColor:aColor,fillOpacity:.22,weight:2,opacity:.8}).bindPopup(()=>makePopup(area),{maxWidth:320,minWidth:272}).addTo(circles);baseCircles[area.id]=bc;L.marker(area.coords,{icon:makeIcon(area,priceColor)}).bindPopup(()=>makePopup(area),{maxWidth:320,minWidth:272}).addTo(markers);const lo=LABEL_OFFSETS[area.id]||{off:[0.022,0],dir:'n'},labelPos=[area.coords[0]+lo.off[0],area.coords[1]+lo.off[1]],connector=L.polyline([area.coords,labelPos],{color:aColor,weight:1.5,opacity:.55,dashArray:'4 4'}).addTo(connectorLayer);L.circleMarker(area.coords,{radius:5,color:'rgba(255,255,255,.8)',weight:2,fillColor:aColor,fillOpacity:1}).addTo(connectorLayer);const lblMarker=L.marker(labelPos,{icon:makeAreaLabel(area,lo.dir),zIndexOffset:300,draggable:true}).addTo(labelLayer);lblMarker.on('drag',function(e){connector.setLatLngs([area.coords,e.target.getLatLng()]);});});}
 function renderConnections(){subwayLayer.clearLayers();AREA_CONNECTIONS.forEach(line=>{L.polyline(line.coords,{color:'rgba(0,0,0,.4)',weight:line.weight+3,opacity:.6,lineJoin:'round',lineCap:'round'}).addTo(subwayLayer);L.polyline(line.coords,{color:line.color,weight:line.weight,opacity:.85,lineJoin:'round',lineCap:'round'}).bindTooltip(line[currentLang==='ja'?'ja':currentLang==='en'?'en':'ko'],{sticky:true,direction:'top',className:'subway-tip',offset:[0,-4]}).addTo(subwayLayer);});}
 function renderSubwayList(){const seen=new Set(),unique=AREA_CONNECTIONS.filter(l=>{if(seen.has(l.ko))return false;seen.add(l.ko);return true;});document.getElementById('subway-list').innerHTML=unique.map(l=>{const m=l.ko.match(/^(.+?)(?:\s*\((.+?)\))?$/),name=m[1],org=m[2]||'';return `<div class="sl-item"><div class="sl-swatch" style="background:${l.color}"></div><div class="sl-name">${name}${org?`<span class="sl-org">${org}</span>`:''}</div></div>`;}).join('');}
 
@@ -380,16 +385,14 @@ function changeNights(d){plannerNights=Math.max(1,Math.min(14,plannerNights+d));
 function renderTravelTypeGrid(){
   const grid=document.getElementById('pn-type-grid');
   grid.innerHTML=TRAVEL_TYPES.map(tp=>{
-    const sel=selectedTypes.includes(tp.id),maxed=!sel&&selectedTypes.length>=MAX_TYPE_SEL;
+    const sel=selectedTypes.includes(tp.id);
     const name=currentLang==='ko'?tp.ko:currentLang==='en'?tp.en:tp.ja;
-    return `<button class="ts-btn${sel?' active':''}${maxed?' maxed':''}" onclick="toggleTravelType('${tp.id}')"><span class="ts-emoji">${tp.emoji}</span><span class="ts-name">${name}</span></button>`;
+    return `<button class="ts-btn${sel?' active':''}" onclick="toggleTravelType('${tp.id}')"><span class="ts-emoji">${tp.emoji}</span><span class="ts-name">${name}</span></button>`;
   }).join('');
   document.getElementById('pn-type-hint').textContent=`${selectedTypes.length} / ${MAX_TYPE_SEL} 선택됨`;
 }
 function toggleTravelType(id){
-  const i=selectedTypes.indexOf(id);
-  if(i>=0)selectedTypes.splice(i,1);
-  else if(selectedTypes.length<MAX_TYPE_SEL)selectedTypes.push(id);
+  selectedTypes=selectedTypes.includes(id)?[]:[id];
   renderTravelTypeGrid();
 }
 
@@ -411,6 +414,7 @@ const AREA_PROXIMITY = {
 function isNearbyArea(a,b){return (AREA_PROXIMITY[a]||[]).includes(b)||(AREA_PROXIMITY[b]||[]).includes(a);}
 
 function buildItinerary(nights,types,budgetKRW){
+  const prefTypes=[...new Set(types.flatMap(t=>GENERATION_TYPE_PREFS[t]||[t]))];
   const days=nights+1;
   // score areas
   const areaScore={};
@@ -429,7 +433,7 @@ function buildItinerary(nights,types,budgetKRW){
   // attractions per day
   const dayPlans=dayAreas.map((area,i)=>{
     const nearIds=[area.id,...(AREA_PROXIMITY[area.id]||[])];
-    const spots=ATTRACTIONS.filter(a=>nearIds.includes(a.area)&&(types.length===0||types.includes(a.type))).slice(0,3);
+    const spots=ATTRACTIONS.filter(a=>nearIds.includes(a.area)&&(prefTypes.length===0||prefTypes.includes(a.type))).slice(0,3);
     return {area,spots,color:DAY_COLORS[i%DAY_COLORS.length]};
   });
   return {accArea,dayPlans,budgetKRW};
@@ -441,7 +445,7 @@ function renderPlannerResult(plan){
   const totalAccKRW=accPrice*plannerNights;
   const remaining=budgetKRW>0?budgetKRW-totalAccKRW:null;
   const accName=currentLang==='ko'?accArea.ko:currentLang==='en'?accArea.en:accArea.ja;
-  const whyMap={food:'맛집·시장 접근성 최고',landmark:'궁궐·역사 명소 인접',local:'골목·로컬 감성 풍부',activity:'체험·엔터테인먼트 집중',shopping:'쇼핑 편의 탁월',photo:'인생샷 포인트 밀집'};
+  const whyMap={teen:'사진·쇼핑·체험 동선에 적합',young:'카페·맛집·핫플 접근성 좋음',middle:'맛집·대표 명소 이동이 편함',senior:'역사·공원·짧은 동선에 적합'};
   const mainType=selectedTypes[0]||'landmark';
   const whyStr=whyMap[mainType]||'접근성·편의 종합 최우수';
   let html=`<div class="pn-result"><div class="pn-result-hd">🏨 추천 숙소 위치</div><div class="rec-card"><div class="rec-emoji">🛏️</div><div><div class="rec-label">STAY</div><div class="rec-name">${accName}</div><div class="rec-why">${whyStr}</div><div class="rec-price">${fmt(accPrice)}/박 · ${plannerNights}박 = ${fmt(totalAccKRW)}${remaining!==null?` · 잔여예산 ${fmt(Math.max(0,remaining))}`:''}</div></div></div><div class="pn-result-hd" style="margin-top:14px;">📅 추천 동선</div>`;
@@ -454,36 +458,90 @@ function renderPlannerResult(plan){
   document.getElementById('pn-result').innerHTML=html;
 }
 
+function offsetRouteBannerPos(coord,dayIndex,stopIndex=0){
+  const patterns=[[0.006,-0.008],[0.007,0.008],[-0.006,0.008],[-0.007,-0.008],[0.009,0],[-0.009,0]];
+  const p=patterns[(dayIndex+stopIndex)%patterns.length];
+  return [coord[0]+p[0],coord[1]+p[1]];
+}
+
 function drawRouteOnMap(plan){
   routeLayer.clearLayers();
+  routeFocusAreaIds=new Set();
+  drawStayRecommendation(plan.accArea, plan.budgetKRW);
   plan.dayPlans.forEach((dp,i)=>{
     const spots=[{lat:dp.area.coords[0],lng:dp.area.coords[1]},...dp.spots.map(s=>({lat:s.lat,lng:s.lng}))];
+    const aName=currentLang==='ko'?dp.area.ko:currentLang==='en'?dp.area.en:dp.area.ja;
+    routeFocusAreaIds.add(dp.area.id);
+    dp.spots.forEach(s=>{if(s.area)routeFocusAreaIds.add(s.area);});
+    if(spots.length){
+      const dayBannerPos=offsetRouteBannerPos([spots[0].lat,spots[0].lng],i+1,0),dayConnector=L.polyline([[spots[0].lat,spots[0].lng],dayBannerPos],{color:dp.color,weight:2,opacity:.75,dashArray:'4 4'}).addTo(routeLayer),dayMarker=L.marker(dayBannerPos,{icon:L.divIcon({html:`<div class="route-day-badge" style="--route-color:${dp.color}"><span class="route-day-kicker">Day ${i+1}</span><span class="route-day-name">${aName}</span></div>`,className:'',iconSize:[null,48],iconAnchor:[10,58]}),draggable:true,zIndexOffset:700}).addTo(routeLayer);dayMarker.on('drag',e=>dayConnector.setLatLngs([[spots[0].lat,spots[0].lng],e.target.getLatLng()]));
+      spots.forEach(s=>L.marker([s.lat,s.lng],{icon:L.divIcon({html:`<div class="route-stop-dot" style="--route-color:${dp.color}"></div>`,className:'',iconSize:[30,30],iconAnchor:[15,15]}),interactive:false,zIndexOffset:420}).addTo(routeLayer));
+    }
     for(let j=0;j<spots.length-1;j++){
       const A=spots[j],B=spots[j+1];
-      L.polyline([[A.lat,A.lng],[B.lat,B.lng]],{color:dp.color,weight:3,opacity:.85,dashArray:'6 4'}).addTo(routeLayer);
+      L.polyline([[A.lat,A.lng],[B.lat,B.lng]],{color:'#0b0e1a',weight:12,opacity:.8,lineCap:'round',lineJoin:'round'}).addTo(routeLayer);
+      L.polyline([[A.lat,A.lng],[B.lat,B.lng]],{color:dp.color,weight:7,opacity:1,dashArray:'10 7',lineCap:'round',lineJoin:'round'}).addTo(routeLayer);
       const midLat=(A.lat+B.lat)/2,midLng=(A.lng+B.lng)/2;
       const angle=Math.atan2(B.lng-A.lng,B.lat-A.lat)*180/Math.PI;
-      L.marker([midLat,midLng],{icon:L.divIcon({html:`<div style="transform:rotate(${angle}deg);font-size:10px;color:${dp.color};text-shadow:0 0 4px #000;">▼</div>`,className:'',iconSize:[12,12],iconAnchor:[6,6]})}).addTo(routeLayer);
+      L.marker([midLat,midLng],{icon:L.divIcon({html:`<div class="route-arrow" style="--route-color:${dp.color};transform:rotate(${angle}deg)">▼</div>`,className:'',iconSize:[22,22],iconAnchor:[11,11]}),interactive:false,zIndexOffset:450}).addTo(routeLayer);
     }
-    // bubble banner at area center
-    const aName=currentLang==='ko'?dp.area.ko:currentLang==='en'?dp.area.en:dp.area.ja;
-    L.marker(dp.area.coords,{icon:L.divIcon({html:`<div class="rb-wrap"><div class="rb-num" style="background:${dp.color}">${i+1}</div><div class="rb-text">Day ${i+1} · ${aName}</div></div>`,className:'',iconSize:[null,null],iconAnchor:[-4,14]}),zIndexOffset:500}).addTo(routeLayer);
+    const labelPos=offsetRouteBannerPos(dp.area.coords,i+1,2),stopConnector=L.polyline([dp.area.coords,labelPos],{color:dp.color,weight:1.5,opacity:.55,dashArray:'3 5'}).addTo(routeLayer),stopMarker=L.marker(labelPos,{icon:L.divIcon({html:`<div class="rb-wrap"><div class="rb-num" style="background:${dp.color}">${i+1}</div><div class="rb-text">Day ${i+1} · ${aName}</div></div>`,className:'',iconSize:[null,null],iconAnchor:[10,17]}),draggable:true,zIndexOffset:500}).addTo(routeLayer);stopMarker.on('drag',e=>stopConnector.setLatLngs([dp.area.coords,e.target.getLatLng()]));
   });
   if(plan.dayPlans.length){
-    const allCoords=[...plan.dayPlans.flatMap(dp=>[dp.area.coords,...dp.spots.map(s=>[s.lat,s.lng])])];
+    const allCoords=[plan.accArea.coords,...plan.dayPlans.flatMap(dp=>[dp.area.coords,...dp.spots.map(s=>[s.lat,s.lng])])];
     if(allCoords.length)map.fitBounds(L.latLngBounds(allCoords),{padding:[48,48]});
   }
 }
 
+function stayReasons(area, budgetKRW){
+  const price=area.prices[currentType]||area.prices.budget||0;
+  const nightlyTarget=budgetKRW&&plannerNights?Math.round(budgetKRW*.5/plannerNights):0;
+  const fitsBudget=!nightlyTarget||price<=nightlyTarget;
+  if(currentLang==='en') return [
+    `Budget: ${fmt(price)}${fitsBudget?' fits the nightly target':' keeps the stay cost predictable'}`,
+    'Route: short hops to the recommended day plans',
+    'Safety: busy transit and hotel area for easier late returns'
+  ];
+  if(currentLang==='ja') return [
+    `予算: ${fmt(price)}で宿泊費を見積もりやすい`,
+    '動線: おすすめ日程へ移動しやすい拠点',
+    '治安: 人通りと交通量があるエリア'
+  ];
+  return [
+    `예산: 1박 평균 ${fmt(price)}로 숙박비 예측이 쉬움`,
+    '동선: 추천 일정 구간으로 이동하기 좋은 거점',
+    '치안: 역세권·호텔 밀집 지역이라 늦은 복귀가 비교적 수월'
+  ];
+}
+
+function drawStayRecommendation(area, budgetKRW){
+  const name=currentLang==='ko'?area.ko:currentLang==='en'?area.en:area.ja;
+  const reasons=stayReasons(area, budgetKRW).map(r=>`<div class="stay-rec-reason">${r}</div>`).join('');
+  const bannerPos=[area.coords[0]+0.018,area.coords[1]+0.026];
+  routeFocusAreaIds.add(area.id);
+  L.marker(area.coords,{icon:L.divIcon({html:`<div class="stay-hotel-pin">🏨</div>`,className:'',iconSize:[48,48],iconAnchor:[24,24]}),interactive:false,zIndexOffset:790}).addTo(routeLayer);
+  const connector=L.polyline([area.coords,bannerPos],{color:'#3b82f6',weight:3,opacity:.9,dashArray:'5 5'}).addTo(routeLayer);
+  const arrowAngle=Math.atan2(area.coords[0]-bannerPos[0],area.coords[1]-bannerPos[1])*180/Math.PI;
+  const arrowMarker=L.marker([(area.coords[0]+bannerPos[0])/2,(area.coords[1]+bannerPos[1])/2],{icon:L.divIcon({html:`<div class="stay-rec-arrow" style="transform:rotate(${arrowAngle}deg)">➜</div>`,className:'',iconSize:[24,24],iconAnchor:[12,12]}),interactive:false,zIndexOffset:795}).addTo(routeLayer);
+  const banner=L.marker(bannerPos,{icon:L.divIcon({html:`<div class="stay-rec-banner"><div class="stay-rec-top"><div class="stay-rec-icon">🏨</div><div><div class="stay-rec-kicker">${currentLang==='en'?'Recommended stay':currentLang==='ja'?'おすすめ宿泊地':'추천 숙소 위치'}</div><div class="stay-rec-name">${name}</div></div></div><div class="stay-rec-reasons">${reasons}</div></div>`,className:'',iconSize:[300,150],iconAnchor:[0,150]}),draggable:true,zIndexOffset:800}).addTo(routeLayer);
+  banner.on('drag',e=>{const p=e.target.getLatLng(),pos=[p.lat,p.lng],ang=Math.atan2(area.coords[0]-pos[0],area.coords[1]-pos[1])*180/Math.PI;connector.setLatLngs([area.coords,p]);arrowMarker.setLatLng([(area.coords[0]+pos[0])/2,(area.coords[1]+pos[1])/2]);arrowMarker.setIcon(L.divIcon({html:`<div class="stay-rec-arrow" style="transform:rotate(${ang}deg)">➜</div>`,className:'',iconSize:[24,24],iconAnchor:[12,12]}));});
+}
+
 function generateAndRender(){
-  if(selectedTypes.length===0){alert('여행 유형을 1개 이상 선택해주세요.');return;}
+  if(routeFocusActive){clearRouteFocus();return;}
+  if(selectedTypes.length===0){alert('세대별 여행추천을 1개 선택해주세요.');return;}
   const budgetInput=document.getElementById('pn-budget');
   const budgetKRW=parseFloat(budgetInput.value)||0;
   const plan=buildItinerary(plannerNights,selectedTypes,budgetKRW);
   renderPlannerResult(plan);
   drawRouteOnMap(plan);
-  closePlanner();
+  applyRouteFocus();
 }
+
+function setPlannerRouteMode(active){const label=document.getElementById('pn-gen-label'),btn=document.querySelector('.pn-gen-btn');if(!label||!btn)return;label.textContent=active?(currentLang==='en'?'Hide Route':currentLang==='ja'?'おすすめルートを解除':'추천동선 표시 해제'):(currentLang==='en'?'Generate Route':currentLang==='ja'?'おすすめルート作成':'추천 동선 생성');btn.classList.toggle('route-clear-mode',active);}
+function fadeGroup(group,opacity){group.eachLayer(layer=>{if(layer.setOpacity)layer.setOpacity(opacity);if(layer.setStyle)layer.setStyle({opacity,fillOpacity:Math.min(opacity,.12)});});}
+function applyRouteFocus(){routeFocusActive=true;map.getContainer().classList.add('route-focus-map');fadeGroup(attrLayer,.12);fadeGroup(airportLayer,.12);fadeGroup(subwayLayer,.16);fadeGroup(connectorLayer,.12);fadeGroup(markers,.14);fadeGroup(labelLayer,.18);circles.eachLayer(layer=>layer.setStyle({opacity:.12,fillOpacity:.035,weight:1}));routeFocusAreaIds.forEach(id=>baseCircles[id]?.setStyle({opacity:1,fillOpacity:.26,weight:4}));routeLayer.eachLayer(layer=>{if(layer.bringToFront)layer.bringToFront();});setPlannerRouteMode(true);}
+function clearRouteFocus(){routeFocusActive=false;routeLayer.clearLayers();map.getContainer().classList.remove('route-focus-map');renderConnections();renderMap();renderAttractions();renderAirports();setPlannerRouteMode(false);}
 
 function applyLang(){const t=TR[currentLang];document.getElementById('h-title').textContent=t.title;document.getElementById('h-sub').textContent=t.sub;document.getElementById('h-hint').textContent=t.hint;document.getElementById('sec-type').textContent=t.secType;document.getElementById('sec-legend').textContent=t.secLegend;document.getElementById('sec-notes').textContent=t.secNotes;document.getElementById('sec-subway').textContent=t.secSubway;Object.keys(t.types).forEach(k=>{const el=document.getElementById('tn-'+k);if(el)el.textContent=t.types[k];});t.legLabels.forEach((lbl,i)=>{const el=document.getElementById('ll'+i);if(el)el.textContent=lbl;});t.legColors.forEach((lbl,i)=>{const el=document.getElementById('lc'+i);if(el)el.textContent=lbl;});t.notes.forEach((note,i)=>{const el=document.getElementById('nt'+i);if(el)el.textContent=note;});document.getElementById('area-count').textContent=AREAS.length+t.unit;document.documentElement.lang=currentLang;const subBtn=document.getElementById('subway-toggle-btn');const isOpen=document.getElementById('subway-list').classList.contains('open');if(subBtn)subBtn.textContent=isOpen?t.collapse:t.expand;}
 function setLang(lang){currentLang=lang;['ko','en','ja'].forEach(l=>{document.getElementById('lang-'+l).classList.toggle('active',l===lang);});setBaseTile(lang);applyLang();renderConnections();renderMap();}
