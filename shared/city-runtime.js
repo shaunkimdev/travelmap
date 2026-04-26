@@ -85,6 +85,65 @@
     }
   }
 
+  function getActiveCityId() {
+    const path = window.location.pathname;
+    const match = path.match(/\/cities\/([^/]+)\//);
+    if (match) return match[1];
+
+    const title = document.getElementById('h-title')?.textContent || '';
+    if (title.includes('오사카')) return 'osaka';
+    if (title.includes('서울')) return 'seoul';
+    return 'tokyo';
+  }
+
+  function buildDokidokiChrome() {
+    if (document.querySelector('.dd-city-tabs')) return;
+
+    const cities = [
+      { id: 'tokyo', ko: '도쿄', emoji: '🗼', href: '../tokyo/' },
+      { id: 'osaka', ko: '오사카', emoji: '🏯', href: '../osaka/' },
+      { id: 'seoul', ko: '서울', emoji: '🏙️', href: '../seoul/' },
+    ];
+    const active = getActiveCityId();
+
+    const tabs = document.createElement('nav');
+    tabs.className = 'dd-city-tabs';
+    tabs.setAttribute('aria-label', '도시 선택');
+    tabs.innerHTML = cities.map((city) => `
+      <a class="dd-city-tab ${city.id === active ? 'active' : ''}" href="${city.href}">
+        <span>${city.emoji}</span><span>${city.ko}</span>
+      </a>
+    `).join('');
+
+    const header = document.querySelector('header');
+    header?.insertAdjacentElement('afterend', tabs);
+
+    const bottom = document.createElement('nav');
+    bottom.className = 'dd-bottom-nav';
+    bottom.setAttribute('aria-label', '모바일 하단 메뉴');
+    bottom.innerHTML = `
+      <a class="dd-bottom-item" href="../../index.html"><span class="dd-bottom-icon">⌂</span><span>홈</span></a>
+      <a class="dd-bottom-item" href="../../index.html#cities"><span class="dd-bottom-icon">⌕</span><span>탐색</span></a>
+      <a class="dd-bottom-item center active" href="#"><span class="dd-bottom-icon">⌖</span><span>지도</span></a>
+      <a class="dd-bottom-item" href="../../index.html#routes"><span class="dd-bottom-icon">♡</span><span>찜</span></a>
+      <a class="dd-bottom-item" href="../../index.html"><span class="dd-bottom-icon">☻</span><span>마이</span></a>
+    `;
+    document.body.appendChild(bottom);
+  }
+
+  function syncPlannerInitialState() {
+    const overlay = document.getElementById('planner-overlay');
+    if (!overlay) return;
+
+    if (typeof window.renderTravelTypeGrid === 'function') {
+      window.renderTravelTypeGrid();
+    }
+
+    if (window.matchMedia('(min-width: 769px)').matches) {
+      overlay.classList.add('open');
+    }
+  }
+
   window.cityCreateBaseTile = function cityCreateBaseTile(map, lang, previousLayer) {
     if (previousLayer) map.removeLayer(previousLayer);
 
@@ -121,6 +180,8 @@
   });
 
   window.addEventListener('load', () => {
+    buildDokidokiChrome();
+    syncPlannerInitialState();
     reorderSidebar();
     enhancePlannerDialog();
     wrapPlannerFunctions();

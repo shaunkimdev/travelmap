@@ -4,331 +4,280 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8551388789946009" crossorigin="anonymous"></script>
-<title>어서와 여행은 처음이지? — 도시별 숙소 가격 지도</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap"/>
+<title>도키도키트립 | 도시별 숙소 가격 지도</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800;900&display=swap"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#0b0e1a;
-  --card-bg:#111827;
-  --card-border:#1a2740;
-  --accent:#f97316;
-  --accent2:#6366f1;
-  --text:#eef2f8;
-  --muted:#8a9bb5;
-  --muted2:#4a5f78;
-  --glow:rgba(249,115,22,.18);
-  --font:'Noto Sans KR',-apple-system,'Malgun Gothic',sans-serif;
+  --peach:#ff5c8a;
+  --peach-dark:#e83d70;
+  --peach-soft:#fff0f4;
+  --ink:#141517;
+  --text:#2b2d31;
+  --muted:#868b94;
+  --line:#eaebee;
+  --paper:#fff;
+  --bg:#f2f3f6;
+  --shadow:0 14px 36px rgba(20,21,23,.10);
+  --font:'Noto Sans KR',-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
 }
-html,body{
-  height:100%;
-  font-family:var(--font);
-  background:var(--bg);
-  color:var(--text);
-  overflow-x:hidden;
-  -webkit-font-smoothing:antialiased;
+html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+body{overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+button{font:inherit}
+.app-shell{min-height:100dvh;display:grid;grid-template-columns:300px minmax(0,1fr);background:var(--bg)}
+.side{
+  position:sticky;top:0;height:100dvh;background:var(--paper);border-right:1px solid var(--line);
+  padding:24px 22px;display:flex;flex-direction:column;gap:24px;
 }
-
-/* ── SCROLLBAR ── */
-::-webkit-scrollbar{width:4px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:#1a2740;border-radius:4px}
-
-/* ── HERO ── */
+.brand{display:flex;align-items:center;gap:10px}
+.brand-mark{width:40px;height:40px;border-radius:12px;background:var(--peach);display:grid;place-items:center;box-shadow:0 10px 22px rgba(255,92,138,.25)}
+.brand-mark svg{width:25px;height:25px}
+.brand-name{font-size:22px;font-weight:900;letter-spacing:0;color:var(--ink)}
+.brand-sub{font-size:12px;color:var(--muted);font-weight:600;margin-top:2px}
+.search-box{height:46px;border-radius:999px;background:var(--bg);display:flex;align-items:center;gap:9px;padding:0 16px;color:#adb1b8;font-size:14px}
+.nav-stack{display:flex;flex-direction:column;gap:8px}
+.nav-item{height:44px;border-radius:13px;display:flex;align-items:center;gap:11px;padding:0 13px;color:#5f646c;font-size:14px;font-weight:700}
+.nav-item.active{background:var(--ink);color:#fff}
+.nav-icon{width:22px;text-align:center}
+.side-card{margin-top:auto;background:linear-gradient(135deg,var(--peach),#ff8fb2);border-radius:18px;padding:18px;color:#fff;overflow:hidden;position:relative}
+.side-card::after{content:'✈';position:absolute;right:16px;bottom:-14px;font-size:70px;opacity:.18}
+.side-card-label{font-size:12px;opacity:.82;font-weight:700}
+.side-card-title{font-size:20px;font-weight:900;line-height:1.28;margin:5px 0 14px}
+.side-card-link{display:inline-flex;height:34px;align-items:center;border-radius:999px;background:#fff;color:var(--peach-dark);padding:0 14px;font-size:13px;font-weight:900}
+.main{min-width:0;padding:28px clamp(18px,3vw,44px) 36px}
+.topbar{height:48px;display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+.top-title{font-size:15px;color:#5f646c;font-weight:800}
+.top-actions{display:flex;gap:8px}
+.icon-btn{width:42px;height:42px;border:none;border-radius:999px;background:var(--paper);box-shadow:0 1px 4px rgba(0,0,0,.07);display:grid;place-items:center;cursor:pointer}
 .hero{
-  min-height:100vh;
-  display:flex;flex-direction:column;
-  align-items:center;justify-content:center;
-  text-align:center;
-  padding:60px 20px 0;
-  position:relative;
-  overflow:hidden;
+  display:grid;grid-template-columns:minmax(0,1.05fr) minmax(320px,.95fr);gap:20px;align-items:stretch;margin-bottom:22px;
 }
-.hero::before{
-  content:'';
-  position:absolute;inset:0;
-  background:
-    radial-gradient(ellipse 70% 50% at 50% -5%,  rgba(99,102,241,.18) 0%, transparent 70%),
-    radial-gradient(ellipse 40% 35% at 85% 75%,  rgba(249,115,22,.10) 0%, transparent 60%),
-    radial-gradient(ellipse 35% 28% at 8%  55%,  rgba(6,182,212,.08)  0%, transparent 60%);
-  pointer-events:none;
+.hero-panel{
+  min-height:278px;border-radius:24px;background:linear-gradient(135deg,var(--peach),#ff8fb2);
+  color:#fff;padding:34px;position:relative;overflow:hidden;box-shadow:var(--shadow);
 }
-
-/* hero badge */
-.hero-badge{
-  display:inline-flex;align-items:center;gap:6px;
-  background:rgba(99,102,241,.12);
-  border:1px solid rgba(99,102,241,.28);
-  border-radius:100px;
-  padding:5px 14px;
-  font-size:.7rem;font-weight:700;
-  color:#a5b4fc;
-  letter-spacing:.07em;text-transform:uppercase;
-  margin-bottom:32px;
-}
-.hero-badge .dot{animation:pulse 2.4s ease-in-out infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-
-.hero-eyebrow{
-  font-size:clamp(.95rem,2.5vw,1.2rem);
-  font-weight:700;color:var(--accent);
-  letter-spacing:.03em;margin-bottom:14px;
-}
-.hero-title{
-  font-size:clamp(2rem,5.5vw,3.6rem);
-  font-weight:900;line-height:1.1;
-  letter-spacing:-.025em;
-  margin-bottom:18px;
-}
-.hero-title .hl{
-  background:linear-gradient(135deg,#f97316 0%,#fb923c 45%,#fbbf24 100%);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-}
-.hero-desc{
-  font-size:clamp(.88rem,1.8vw,1rem);
-  color:var(--muted);
-  max-width:520px;
-  line-height:1.9;
-  margin-bottom:12px;
-}
-.hero-desc strong{color:var(--text);font-weight:700}
-.hero-cta-hint{
-  font-size:.75rem;color:var(--muted2);
-  display:flex;align-items:center;gap:8px;
-  margin-bottom:52px;
-  width:100%;max-width:380px;
-}
-.hero-cta-hint::before,
-.hero-cta-hint::after{
-  content:'';flex:1;height:1px;
-  background:linear-gradient(to right,transparent,rgba(74,95,120,.3));
-}
-.hero-cta-hint::after{
-  background:linear-gradient(to left,transparent,rgba(74,95,120,.3));
-}
-
-/* ── SECTION ── */
-.section{
-  max-width:1080px;
-  width:100%;
-  margin:0 auto;
-  padding:0 20px 80px;
-}
-.section-label{
-  font-size:.67rem;font-weight:700;
-  text-transform:uppercase;letter-spacing:.1em;
-  color:var(--muted2);
-  margin-bottom:24px;
-  display:flex;align-items:center;gap:10px;
-}
-.section-label::after{content:'';flex:1;height:1px;background:var(--card-border)}
-
-/* ── CITY GRID ── */
-.city-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
-  gap:14px;
-}
-
-/* ── CITY CARD ── */
+.hero-panel::after{content:'🗺️';position:absolute;right:34px;bottom:18px;font-size:112px;opacity:.16}
+.eyebrow{font-size:13px;font-weight:800;opacity:.88;margin-bottom:8px}
+.hero h1{font-size:clamp(32px,4.2vw,56px);font-weight:900;line-height:1.08;letter-spacing:0;margin-bottom:15px}
+.hero-copy{max-width:430px;font-size:16px;line-height:1.75;font-weight:600;opacity:.9}
+.hero-cta{margin-top:24px;display:flex;gap:10px;flex-wrap:wrap}
+.primary-cta,.ghost-cta{height:44px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;padding:0 18px;font-size:14px;font-weight:900}
+.primary-cta{background:#fff;color:var(--peach-dark)}
+.ghost-cta{background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.26)}
+.insight-panel{display:grid;grid-template-rows:auto 1fr;gap:12px}
+.metric-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.metric{background:var(--paper);border-radius:16px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.metric-num{font-size:24px;font-weight:900;color:var(--ink)}
+.metric-label{font-size:12px;color:var(--muted);font-weight:700;margin-top:3px}
+.route-card{background:var(--paper);border-radius:18px;box-shadow:0 1px 4px rgba(0,0,0,.07);overflow:hidden;display:grid;grid-template-columns:148px minmax(0,1fr)}
+.route-art{background:#e8f4f8;display:grid;place-items:center;font-size:46px;min-height:146px;position:relative}
+.route-badge{position:absolute;left:12px;top:12px;background:var(--peach);color:#fff;border-radius:999px;padding:4px 9px;font-size:11px;font-weight:900}
+.route-body{padding:17px 18px}
+.section-head{display:flex;align-items:center;justify-content:space-between;margin:24px 0 12px}
+.section-title{font-size:19px;font-weight:900;color:var(--ink)}
+.section-more{font-size:13px;font-weight:900;color:var(--peach-dark)}
+.chip-row{display:flex;gap:8px;overflow:auto;padding-bottom:2px;scrollbar-width:none}
+.chip-row::-webkit-scrollbar{display:none}
+.chip{height:36px;border-radius:999px;border:1.5px solid var(--line);background:var(--paper);color:#5f646c;padding:0 15px;font-size:14px;font-weight:800;white-space:nowrap}
+.chip.active{background:var(--ink);border-color:var(--ink);color:#fff}
+.city-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
 .city-card{
-  position:relative;
-  background:var(--card-bg);
-  border:1.5px solid var(--card-border);
-  border-radius:20px;
-  padding:26px 14px 20px;
-  text-align:center;
-  cursor:pointer;
-  transition:transform .2s cubic-bezier(.25,.8,.25,1), box-shadow .2s, border-color .2s;
-  user-select:none;
-  text-decoration:none;
-  display:block;
-  overflow:hidden;
+  background:var(--paper);border:1px solid transparent;border-radius:18px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.07);
+  transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;min-width:0;
 }
-.city-card::before{
-  content:'';
-  position:absolute;inset:0;
-  border-radius:20px;
-  background:radial-gradient(circle at 50% 0%, var(--c-glow,rgba(99,102,241,.1)) 0%, transparent 65%);
-  opacity:0;
-  transition:opacity .28s;
+.city-card.available:hover{transform:translateY(-3px);box-shadow:0 16px 34px rgba(20,21,23,.13);border-color:var(--c-color)}
+.city-card.soon{opacity:.58}
+.city-cover{height:112px;background:var(--c-bg,var(--peach-soft));display:grid;place-items:center;font-size:42px;position:relative}
+.city-badge{position:absolute;top:10px;right:10px;border-radius:999px;padding:4px 8px;font-size:10px;font-weight:900;background:rgba(20,21,23,.62);color:#fff}
+.city-badge.badge-live{background:var(--peach);color:#fff}
+.city-body{padding:13px 14px 15px}
+.city-name-ko{font-size:16px;font-weight:900;color:var(--ink)}
+.city-name-en{font-size:11px;font-weight:800;color:var(--c-color,var(--muted));margin-top:1px}
+.city-tagline{font-size:12px;color:#5f646c;font-weight:600;margin-top:8px;line-height:1.45;word-break:keep-all}
+.city-country{font-size:12px;color:var(--muted);font-weight:700;margin-top:8px}
+.route-title{font-size:18px;font-weight:900;line-height:1.35;margin-bottom:7px}
+.route-meta{font-size:13px;color:#5f646c;font-weight:700;line-height:1.55}
+.route-author{display:flex;align-items:center;gap:7px;margin-top:14px;color:#868b94;font-size:12px;font-weight:700}
+.avatar{width:24px;height:24px;border-radius:50%;background:var(--peach-soft);color:var(--peach-dark);display:grid;place-items:center;font-weight:900}
+.mobile-tabbar{display:none}
+.footer{padding:18px 0 0;color:#adb1b8;font-size:12px;font-weight:600;line-height:1.8;text-align:center}
+@media(max-width:960px){
+  .app-shell{display:block;padding-bottom:72px}
+  .side{display:none}
+  .main{padding:0 0 20px}
+  .topbar{height:auto;background:var(--paper);border-bottom:1px solid var(--line);padding:12px 16px;margin:0;position:sticky;top:0;z-index:20}
+  .top-title{display:flex;align-items:center;gap:8px;font-size:20px;color:var(--ink);font-weight:900}
+  .top-title::before{content:'♥';width:30px;height:30px;border-radius:9px;background:var(--peach);color:#fff;display:grid;place-items:center;font-size:17px}
+  .hero{display:block;margin:0}
+  .hero-panel{margin:12px 16px 0;min-height:176px;border-radius:18px;padding:20px}
+  .hero-panel::after{right:18px;bottom:8px;font-size:70px}
+  .hero h1{font-size:26px;line-height:1.22;margin-bottom:8px}
+  .hero-copy{font-size:13px;line-height:1.65;max-width:260px}
+  .hero-cta{margin-top:16px}
+  .primary-cta,.ghost-cta{height:36px;padding:0 14px;font-size:13px}
+  .insight-panel{display:none}
+  .content-pad{padding:0 16px}
+  .section-head{margin:18px 0 10px}
+  .section-title{font-size:17px}
+  .city-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+  .city-cover{height:68px;font-size:28px}
+  .city-body{padding:8px 10px 10px}
+  .city-name-ko{font-size:13px}
+  .city-name-en,.city-tagline{display:none}
+  .city-country{font-size:10px;margin-top:2px}
+  .city-badge{font-size:8px;top:6px;right:6px;padding:2px 5px;border-radius:5px}
+  .route-card{grid-template-columns:1fr;border-radius:14px}
+  .route-art{height:150px;min-height:150px}
+  .route-body{padding:13px 14px 15px}
+  .route-title{font-size:15px}
+  .route-meta{font-size:13px}
+  .mobile-tabbar{
+    position:fixed;left:0;right:0;bottom:0;height:64px;background:var(--paper);border-top:1px solid var(--line);
+    display:grid;grid-template-columns:repeat(5,1fr);z-index:50;padding-bottom:env(safe-area-inset-bottom);
+  }
+  .tab-item{border:none;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:#adb1b8;font-size:10px;font-weight:700}
+  .tab-item.active{color:var(--peach)}
+  .tab-item.center span:first-child{width:50px;height:50px;border-radius:999px;background:var(--peach);color:#fff;display:grid;place-items:center;margin-top:-18px;box-shadow:0 4px 16px rgba(20,21,23,.18);border:2px solid #fff}
 }
-.city-card:hover::before{opacity:1}
-.city-card:hover{
-  transform:translateY(-5px) scale(1.015);
-  border-color:var(--c-color, var(--accent2));
-  box-shadow:0 14px 36px rgba(0,0,0,.45), 0 0 0 1px var(--c-color,var(--accent2));
-}
-.city-card.available:hover{
-  box-shadow:0 14px 36px rgba(0,0,0,.45), 0 0 20px var(--c-glow, var(--glow));
-}
-
-/* available accent border */
-.city-card.available{
-  border-color:color-mix(in srgb, var(--c-color, #f97316) 28%, transparent);
-}
-.city-card.available .city-picto{
-  background:color-mix(in srgb, var(--c-color, #f97316) 10%, transparent);
-  border-color:color-mix(in srgb, var(--c-color, #f97316) 35%, transparent);
-}
-
-/* picto */
-.city-picto{
-  width:64px;height:64px;
-  border-radius:16px;
-  background:rgba(99,102,241,.1);
-  border:1.5px solid rgba(99,102,241,.25);
-  display:flex;align-items:center;justify-content:center;
-  margin:0 auto 14px;
-  font-size:2rem;
-  transition:transform .2s, box-shadow .2s;
-}
-.city-card:hover .city-picto{
-  transform:scale(1.1) rotate(-4deg);
-  box-shadow:0 6px 20px var(--c-glow, rgba(99,102,241,.22));
-}
-
-.city-name-ko{
-  font-size:1.05rem;font-weight:900;
-  color:var(--text);
-  margin-bottom:2px;
-  letter-spacing:-.01em;
-}
-.city-name-en{
-  font-size:.64rem;font-weight:700;
-  letter-spacing:.06em;text-transform:uppercase;
-  color:var(--c-color, var(--muted));
-  margin-bottom:6px;
-}
-.city-tagline{
-  font-size:.61rem;
-  color:var(--muted2);
-  line-height:1.55;
-  margin-bottom:8px;
-  letter-spacing:-.005em;
-}
-.city-card.available .city-tagline{
-  color:var(--muted);
-}
-.city-country{
-  font-size:.6rem;color:var(--muted2);
-  display:flex;align-items:center;justify-content:center;gap:3px;
-}
-
-/* badge */
-.city-badge{
-  position:absolute;top:10px;right:10px;
-  font-size:.56rem;font-weight:700;
-  letter-spacing:.05em;text-transform:uppercase;
-  padding:2px 8px;border-radius:100px;
-}
-.badge-live{
-  background:rgba(34,197,94,.12);
-  color:#4ade80;
-  border:1px solid rgba(34,197,94,.25);
-}
-.badge-soon{
-  background:rgba(255,255,255,.04);
-  color:var(--muted2);
-  border:1px solid rgba(255,255,255,.07);
-}
-
-/* dim soon cards */
-.city-card.soon{
-  opacity:.65;
-  cursor:default;
-  pointer-events:none;
-}
-.city-card.soon:hover{
-  opacity:.78;
-  transform:translateY(-2px);
-  pointer-events:auto;
-  cursor:not-allowed;
-}
-
-/* ── FOOTER ── */
-.footer{
-  text-align:center;
-  padding:28px 20px;
-  border-top:1px solid var(--card-border);
-  font-size:.65rem;
-  color:var(--muted2);
-  line-height:2.2;
-}
-.footer a{color:var(--muted2);text-decoration:none}
-.footer a:hover{color:var(--muted)}
-
-/* ── MOBILE ── */
-@media(max-width:600px){
-  .city-grid{grid-template-columns:repeat(2,1fr)}
-  .hero-title{font-size:2rem}
-  .hero-badge{font-size:.65rem}
+@media(max-width:520px){
+  body{background:var(--bg)}
+  .city-grid{grid-template-columns:repeat(3,1fr)}
+  .chip{height:34px;font-size:13px;padding:0 13px}
 }
 </style>
 </head>
 <body>
+<div class="app-shell">
+  <aside class="side">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 120 120" fill="none"><path d="M60 88C60 88 24 67 24 44.5C24 34.3 32.3 26 42.5 26C49.6 26 56 30.2 60 36.4C64 30.2 70.4 26 77.5 26C87.7 26 96 34.3 96 44.5C96 67 60 88 60 88Z" fill="white"/></svg>
+      </div>
+      <div>
+        <div class="brand-name">도키도키트립</div>
+        <div class="brand-sub">숙소 위치를 고르는 여행 지도</div>
+      </div>
+    </div>
+    <div class="search-box"><span>⌕</span><span>여행지 또는 숙소 지역 검색</span></div>
+    <nav class="nav-stack" aria-label="주요 메뉴">
+      <a class="nav-item active" href="#cities"><span class="nav-icon">⌂</span>홈</a>
+      <a class="nav-item" href="#cities"><span class="nav-icon">⌕</span>탐색</a>
+      <a class="nav-item" href="#cities"><span class="nav-icon">⌖</span>지도</a>
+      <a class="nav-item" href="#routes"><span class="nav-icon">♡</span>추천 루트</a>
+    </nav>
+    <div class="side-card">
+      <div class="side-card-label">이번 주 인기</div>
+      <div class="side-card-title">지금 숙소 잡기 좋은<br>도시는 어디일까?</div>
+      <a class="side-card-link" href="#cities">도시 보기</a>
+    </div>
+  </aside>
 
-<!-- ── HERO ── -->
-<section class="hero">
-  <div class="hero-badge">
-    <span class="dot">●</span>&nbsp; LIVE — 도쿄 · 오사카 · 서울
-  </div>
-  <div class="hero-eyebrow">어서와, 여행은 처음이지?</div>
-  <h1 class="hero-title">
-    숙소는<br>
-    <span class="hl">어디로 할 거야?</span>
-  </h1>
-  <p class="hero-desc">
-    도시 지도를 한눈에 보고<br>
-    <strong>동선과 숙소 위치</strong>를 똑똑하게 결정해봐
-  </p>
-  <div class="hero-cta-hint">도시를 선택하면 숙소 가격 지도가 열려요</div>
+  <main class="main">
+    <div class="topbar">
+      <div class="top-title">도키도키트립</div>
+      <div class="top-actions" aria-label="빠른 작업">
+        <button class="icon-btn" type="button" aria-label="검색">⌕</button>
+        <button class="icon-btn" type="button" aria-label="알림">◦</button>
+      </div>
+    </div>
 
-  <div class="section">
-    <div class="section-label">도시 선택 · Choose a City</div>
-    <div class="city-grid" id="city-grid"></div>
-  </div>
-</section>
+    <section class="hero" aria-label="도키도키트립 소개">
+      <div class="hero-panel">
+        <div class="eyebrow">도시별 숙소 가격 지도</div>
+        <h1>숙소는<br>어디로 할 거야?</h1>
+        <p class="hero-copy">도시 지도를 보면서 지역별 숙박 가격, 동선, 분위기를 한 번에 비교해요.</p>
+        <div class="hero-cta">
+          <a class="primary-cta" href="#cities">여행지 고르기</a>
+          <a class="ghost-cta" href="cities/tokyo/index.html">도쿄 지도 열기</a>
+        </div>
+      </div>
+      <div class="insight-panel">
+        <div class="metric-row">
+          <div class="metric"><div class="metric-num">3</div><div class="metric-label">운영 도시</div></div>
+          <div class="metric"><div class="metric-num">49+</div><div class="metric-label">숙소 지역</div></div>
+          <div class="metric"><div class="metric-num">6</div><div class="metric-label">숙박 유형</div></div>
+        </div>
+        <article class="route-card" id="routes">
+          <div class="route-art"><span class="route-badge">인기</span>🗼</div>
+          <div class="route-body">
+            <div class="route-title">도쿄 클래식 숙소 선택 루트</div>
+            <div class="route-meta">신주쿠 · 아사쿠사 · 시부야를 비교하고 첫 여행에 맞는 숙소 거점을 잡아보세요.</div>
+            <div class="route-author"><span class="avatar">여</span><span>여행하는쭌 · 3일 전</span></div>
+          </div>
+        </article>
+      </div>
+    </section>
 
-<footer class="footer">
-  <div>숙박 가격은 Booking.com 평균 기준 · 실제 가격은 시즌·조건에 따라 다를 수 있습니다</div>
-  <div style="margin-top:4px">© 2025 여행 숙소 가격 지도 · Made with ❤️ for first-time travelers</div>
-</footer>
+    <div class="content-pad">
+      <div class="section-head">
+        <h2 class="section-title">여행지 바로가기</h2>
+        <a class="section-more" href="#cities">전체보기 ›</a>
+      </div>
+      <div class="chip-row" aria-label="도시 필터">
+        <button class="chip active" type="button">전체</button>
+        <button class="chip" type="button">일본</button>
+        <button class="chip" type="button">한국</button>
+        <button class="chip" type="button">동남아</button>
+        <button class="chip" type="button">준비중</button>
+      </div>
+
+      <div class="section-head" id="cities">
+        <h2 class="section-title">도시 선택</h2>
+        <span class="section-more">LIVE · 도쿄 · 오사카 · 서울</span>
+      </div>
+      <div class="city-grid" id="city-grid"></div>
+
+      <footer class="footer">
+        <div>숙박 가격은 Booking.com 평균 기준 · 실제 가격은 시즌과 조건에 따라 달라질 수 있습니다.</div>
+        <div>© 2026 도키도키트립 · TravelMap</div>
+      </footer>
+    </div>
+  </main>
+</div>
+
+<nav class="mobile-tabbar" aria-label="모바일 하단 메뉴">
+  <a class="tab-item active" href="#"><span>⌂</span><span>홈</span></a>
+  <a class="tab-item" href="#cities"><span>⌕</span><span>탐색</span></a>
+  <a class="tab-item center" href="cities/tokyo/index.html"><span>⌖</span><span>지도</span></a>
+  <a class="tab-item" href="#routes"><span>♡</span><span>찜</span></a>
+  <a class="tab-item" href="#"><span>☻</span><span>마이</span></a>
+</nav>
 
 <script src="shared/city-registry.js"></script>
 <script>
 const CITIES = window.CITY_REGISTRY.map(c => ({
-  id:        c.id,
-  ko:        c.ko,
-  en:        c.en,
-  country:   c.country.flag + ' ' + c.country.ko,
-  emoji:     c.emoji,
-  color:     c.color,
-  glow:      c.glow,
-  bg:        c.bg,
-  url:       c.status === 'live' ? c.file : null,
+  id: c.id,
+  ko: c.ko,
+  en: c.en,
+  country: `${c.country.flag} ${c.country.ko}`,
+  emoji: c.emoji,
+  color: c.color,
+  glow: c.glow,
+  bg: c.bg,
+  url: c.status === 'live' ? c.file : null,
   available: c.status === 'live',
-  tagline:   c.tagline.ko,
+  tagline: c.tagline.ko,
 }));
 
 function buildGrid(){
   const grid = document.getElementById('city-grid');
   grid.innerHTML = CITIES.map(c => {
-    const tag   = c.available ? 'a' : 'div';
-    const href  = c.available && c.url ? `href="${c.url}"` : '';
-    const cls   = c.available ? 'city-card available' : 'city-card soon';
+    const tag = c.available ? 'a' : 'div';
+    const href = c.available && c.url ? `href="${c.url}"` : '';
+    const cls = c.available ? 'city-card available' : 'city-card soon';
     const badge = c.available
-      ? `<span class="city-badge badge-live">● LIVE</span>`
-      : `<span class="city-badge badge-soon">준비중</span>`;
+      ? '<span class="city-badge badge-live">LIVE</span>'
+      : '<span class="city-badge">준비중</span>';
     return `
-      <${tag} class="${cls}" ${href}
-        style="--c-color:${c.color};--c-glow:${c.glow};--c-bg:${c.bg};">
-        ${badge}
-        <div class="city-picto">${c.emoji}</div>
-        <div class="city-name-ko">${c.ko}</div>
-        <div class="city-name-en">${c.en}</div>
-        <div class="city-tagline">${c.tagline}</div>
-        <div class="city-country">${c.country}</div>
+      <${tag} class="${cls}" ${href} style="--c-color:${c.color};--c-glow:${c.glow};--c-bg:${c.bg};">
+        <div class="city-cover">${badge}<span>${c.emoji}</span></div>
+        <div class="city-body">
+          <div class="city-name-ko">${c.ko}</div>
+          <div class="city-name-en">${c.en}</div>
+          <div class="city-tagline">${c.tagline}</div>
+          <div class="city-country">${c.country}</div>
+        </div>
       </${tag}>`;
   }).join('');
 }

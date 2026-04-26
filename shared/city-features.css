@@ -223,17 +223,19 @@
   width:30px; height:30px; border-radius:50%;
   display:flex; align-items:center; justify-content:center;
   font-size:13px; cursor:pointer;
-  border:2px solid rgba(255,255,255,.18);
-  box-shadow:0 2px 8px rgba(0,0,0,.55);
-  backdrop-filter:blur(4px);
+  background:rgba(0,0,0,.94)!important;
+  color:#fff;
+  border:2px solid rgba(255,255,255,.86);
+  box-shadow:0 3px 12px rgba(0,0,0,.68);
+  text-shadow:0 1px 2px rgba(0,0,0,.85);
   transition:transform 140ms;
 }
 .attr-dot:hover { transform:scale(1.25) }
-.attr-landmark { background:rgba(99,102,241,.82) }
-.attr-food     { background:rgba(249,115,22,.82) }
-.attr-shopping { background:rgba(236,72,153,.82) }
-.attr-activity { background:rgba(34,197,94,.82)  }
-.attr-local    { background:rgba(168,85,247,.82)  }
+.attr-landmark,
+.attr-food,
+.attr-shopping,
+.attr-activity,
+.attr-local { background:rgba(0,0,0,.94)!important }
 
 /* ── AIRPORT MARKERS ── */
 .ap-chip {
@@ -262,7 +264,12 @@
   display:flex; align-items:center; justify-content:center;
   font-size:.75rem; font-weight:900; color:#fff;
 }
-.rb-text { font-size:.82rem; font-weight:800; color:var(--text) }
+.rb-text {
+  font-size:.82rem;
+  font-weight:800;
+  color:#fff;
+  text-shadow:0 1px 2px rgba(0,0,0,.55);
+}
 
 .route-day-badge {
   box-sizing:border-box;
@@ -271,7 +278,7 @@
   border:3px solid var(--route-color, var(--accent));
   border-radius:8px;
   padding:9px 13px;
-  color:var(--text);
+  color:#fff;
   box-shadow:0 9px 28px rgba(0,0,0,.72), 0 0 0 4px rgba(255,255,255,.1);
   white-space:nowrap;
   pointer-events:auto;
@@ -284,16 +291,18 @@
   background:var(--route-color, var(--accent));
   border-radius:6px;
   color:#fff;
-  font-size:1.15rem;
+  font-size:1rem;
   font-weight:900;
   line-height:1;
   padding:8px 10px;
   text-transform:uppercase;
 }
 .route-day-name {
-  font-size:1.05rem;
+  font-size:1.16rem;
   font-weight:900;
   line-height:1.15;
+  color:#fff;
+  text-shadow:0 1px 2px rgba(0,0,0,.55);
 }
 .route-stop-dot {
   width:30px; height:30px;
@@ -316,13 +325,13 @@
 
 .stay-rec-banner {
   box-sizing:border-box;
-  min-width:250px;
-  max-width:300px;
+  min-width:360px;
+  max-width:440px;
   background:rgba(9,13,26,.96);
   border:3px solid var(--accent);
   border-radius:8px;
   padding:10px 12px;
-  color:var(--text);
+  color:#fff;
   box-shadow:0 10px 30px rgba(0,0,0,.75), 0 0 0 4px rgba(255,255,255,.1);
   pointer-events:auto;
   cursor:grab;
@@ -351,10 +360,13 @@
   line-height:1;
 }
 .stay-rec-name {
-  font-size:1.12rem;
+  font-size:2.24rem;
   font-weight:900;
-  line-height:1.25;
+  line-height:1.12;
   margin-top:2px;
+  word-break:keep-all;
+  color:#fff;
+  text-shadow:0 1px 2px rgba(0,0,0,.55);
 }
 .stay-rec-reasons {
   display:flex;
@@ -365,7 +377,7 @@
 .stay-rec-reason {
   font-size:.8rem;
   font-weight:700;
-  color:var(--text2);
+  color:rgba(255,255,255,.82);
   line-height:1.35;
 }
 .stay-rec-reason::before {
@@ -390,6 +402,19 @@
   color:var(--accent);
   font-size:24px;
   text-shadow:0 0 5px #000, 0 0 10px #000;
+}
+.stay-rec-arrow-head {
+  width:34px;
+  height:34px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:var(--stay-color, var(--accent));
+  font-size:34px;
+  font-weight:900;
+  line-height:1;
+  text-shadow:0 2px 5px rgba(0,0,0,.72), 0 0 10px rgba(0,0,0,.65);
+  transform-origin:center;
 }
 
 /* ── POPUP EXTRAS (image · tags · airport access) ── */
