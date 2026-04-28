@@ -485,7 +485,7 @@ header::before {
   .planner-btn {
     position: fixed;
     right: 12px;
-    bottom: calc(64px + 18vh + 10px);
+    bottom: 78px;
     z-index: 700;
     box-shadow: 0 4px 16px rgba(20,21,23,.18);
   }
@@ -507,13 +507,14 @@ header::before {
     position: absolute;
     left: 0;
     right: 0;
-    bottom: 64px;
+    top: 0;
     width: 100% !important;
     max-height: min(18vh, 150px);
-    border-top: 1px solid var(--border);
+    border-top: none;
+    border-bottom: 1px solid var(--border);
     border-right: none;
-    border-radius: 20px 20px 0 0;
-    box-shadow: 0 -4px 22px rgba(20,21,23,.12);
+    border-radius: 0 0 18px 18px;
+    box-shadow: 0 4px 18px rgba(20,21,23,.10);
     z-index: 650;
     display: block;
     overflow: hidden;
@@ -543,12 +544,12 @@ header::before {
 
   .sidebar .mobile-map-legend {
     position: fixed;
-    top: 122px;
+    top: calc(122px + min(18vh, 150px) + 10px);
     right: 8px;
-    bottom: calc(64px + 18vh + 18px);
-    width: 34px;
+    bottom: 142px;
+    width: 46px;
     max-height: 220px;
-    padding: 8px 6px;
+    padding: 28px 6px;
     border: 1px solid rgba(213,216,222,.9);
     border-radius: 999px;
     background: rgba(255,255,255,.9);
@@ -560,6 +561,28 @@ header::before {
     backdrop-filter: blur(8px);
   }
 
+  .sidebar .mobile-map-legend::before,
+  .sidebar .mobile-map-legend::after {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    color: var(--text2);
+    font-size: 10px;
+    font-weight: 900;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .sidebar .mobile-map-legend::before {
+    content: '비싸다';
+    top: 9px;
+  }
+
+  .sidebar .mobile-map-legend::after {
+    content: '싸다';
+    bottom: 9px;
+  }
+
   .mobile-map-legend .sec-title,
   .mobile-map-legend .leg-labels,
   .mobile-map-legend .leg-items {
@@ -569,7 +592,7 @@ header::before {
   .mobile-map-legend .leg-bar {
     width: 10px;
     height: 100%;
-    min-height: 104px;
+    min-height: 86px;
     margin: 0;
     border-radius: 999px;
     background: linear-gradient(to top,#22c55e,#84cc16,#eab308,#f97316,#ef4444,#a855f7);
@@ -625,7 +648,8 @@ header::before {
   }
 
   .leaflet-control-zoom {
-    margin-bottom: 21vh !important;
+    margin-top: calc(min(18vh, 150px) + 10px) !important;
+    margin-bottom: 78px !important;
   }
 
   .leaflet-popup-content-wrapper {
