@@ -1036,6 +1036,7 @@ function setLang(lang){
 }
 
 function setType(type){
+  resetPlannerRouteForInput();
   currentType = type;
   document.querySelectorAll('.type-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('tab-'+type).classList.add('active');
@@ -1094,6 +1095,7 @@ function renderSubwayList(){
 // COMPANION FILTER
 // ══════════════════════════════════════════
 function setCompanion(type){
+  resetPlannerRouteForInput();
   currentCompanion = type;
   ['solo','couple','friends','family'].forEach(c=>{
     document.getElementById('comp-'+c).classList.toggle('active', c===type);
@@ -1160,6 +1162,7 @@ function closePlanner(){
   document.getElementById('planner-overlay').classList.remove('open');
 }
 function changeNights(delta){
+  resetPlannerRouteForInput();
   plannerNights = Math.max(1, Math.min(14, plannerNights + delta));
   document.getElementById('nights-val').textContent = plannerNights;
 }
@@ -1178,6 +1181,7 @@ function renderTravelTypeGrid(){
     : `${selectedTypes.length}/${MAX_TYPE_SEL} 선택됨`;
 }
 function toggleTravelType(id){
+  resetPlannerRouteForInput();
   selectedTypes = selectedTypes.includes(id) ? [] : [id];
   renderTravelTypeGrid();
 }
@@ -1191,11 +1195,17 @@ function generateAndRender(){
     alert(currentLang==='en'?'Please select one generation.':currentLang==='ja'?'世代別おすすめを1つ選んでください。':'세대별 여행추천을 1개 선택해주세요.');
     return;
   }
-  const budgetRaw = parseFloat(document.getElementById('budget-input').value) || 50;
+  const budgetInput = document.getElementById('budget-input');
+  const budgetRaw = parseFloat(budgetInput.value);
+  if(!Number.isFinite(budgetRaw)||budgetRaw<=0){
+    alert(currentLang==='en'?'Please enter your travel budget.':currentLang==='ja'?'旅行予算を入力してください。':'여행 예산을 입력해주세요.');
+    budgetInput.focus();
+    return;
+  }
   const budgetKrw = budgetRaw * 10000; // 만원 → 원
   const result = buildItinerary(plannerNights, selectedTypes, budgetKrw, currentCompanion);
   renderPlannerResult(result);
-  drawRouteOnMap(result.days, result.recArea, result.budgetPerNightJpy);
+  drawRouteOnMap(result.days, result.recArea, result.budgetPerNightJpy, result.recStayType);
   applyRouteFocus();
 }
 
@@ -1241,6 +1251,8 @@ function clearRouteFocus(){
   renderAirports();
   setPlannerRouteMode(false);
 }
+function resetPlannerRouteForInput(){if(routeFocusActive)clearRouteFocus();}
+document.getElementById('budget-input')?.addEventListener('input',resetPlannerRouteForInput);
 
 function buildItinerary(nights, types, budgetKrw, companion){
   // Filter attractions by type
@@ -1251,6 +1263,7 @@ function buildItinerary(nights, types, budgetKrw, companion){
   // Budget per night for accommodation (50% of budget)
   const budgetPerNightKrw = Math.round(budgetKrw * 0.50 / nights);
   const budgetPerNightJpy = Math.round(budgetPerNightKrw / 9.5);
+  const recStayType = choosePlannerStayType(budgetPerNightJpy);
 
   // Spots per day
   const spotsPerDay = companion==='family' ? 3 : 4;
@@ -1292,22 +1305,24 @@ function buildItinerary(nights, types, budgetKrw, companion){
       areaScores[area] = (areaScores[area]||0) + score;
     });
   });
-  // Budget fit: find area whose capsule price fits budget
-  const budgetFitArea = AREAS.find(a=>{
-    const cap = a.prices.capsule * 9.5;
-    if(budgetPerNightKrw < 50000) return cap < 4500;
-    if(budgetPerNightKrw < 120000) return cap >= 4000 && cap < 6000;
-    return cap >= 6000;
+  AREAS.forEach(area=>{
+    const price = area.prices[recStayType];
+    if(price===null||price===undefined)return;
+    areaScores[area.id]=(areaScores[area.id]||0)+(price<=budgetPerNightJpy?8+Math.max(0,2-price/budgetPerNightJpy*2):-Math.min(6,(price-budgetPerNightJpy)/Math.max(1,budgetPerNightJpy)*8));
   });
-  if(budgetFitArea) areaScores[budgetFitArea.id] = (areaScores[budgetFitArea.id]||0) + 5;
 
   const sortedAreas = Object.entries(areaScores).sort((a,b)=>b[1]-a[1]);
   const recAreaId = sortedAreas[0]?.[0] || 'shinjuku';
   const recArea   = AREAS.find(a=>a.id===recAreaId) || AREAS[0];
   const recName   = recArea[currentLang] || recArea.ko;
-  const recPriceJpy = recArea.prices.budget;
+  const recPriceJpy = recArea.prices[recStayType] ?? recArea.prices.budget;
 
-  return {days, recArea, recName, budgetPerNightJpy, recPriceJpy};
+  return {days, recArea, recName, budgetPerNightJpy, recPriceJpy, recStayType};
+}
+
+function choosePlannerStayType(budgetPerNightJpy){
+  const affordable=PRICE_FALLBACK_ORDER.filter(type=>AREAS.some(area=>area.prices[type]!==null&&area.prices[type]!==undefined&&area.prices[type]<=budgetPerNightJpy));
+  return affordable.length?affordable[affordable.length-1]:PRICE_FALLBACK_ORDER[0];
 }
 
 const AREA_PROXIMITY = {
@@ -1325,12 +1340,12 @@ function isNearbyArea(a,b){
 }
 
 function renderPlannerResult(result){
-  const {days, recArea, recName, budgetPerNightJpy, recPriceJpy} = result;
+  const {days, recArea, recName, budgetPerNightJpy, recPriceJpy, recStayType} = result;
   const t = TR[currentLang];
   const isLangEn = currentLang==='en', isLangJa = currentLang==='ja';
   const title   = isLangEn?'Recommended Accommodation':isLangJa?'おすすめ宿泊エリア':'추천 숙소 위치';
   const subLbl  = isLangEn?'Best area based on your itinerary':isLangJa?'あなたの日程に合ったエリア':'선택한 일정 기준 추천 지역';
-  const priceLbl= isLangEn?'Budget hotel avg.':isLangJa?'ビジネスホテル平均':'비즈니스 호텔 평균';
+  const priceLbl= TR[currentLang].types[recStayType] || (isLangEn?'Stay avg.':isLangJa?'宿泊平均':'숙박 평균');
 
   const dayCards = days.map(d=>{
     const zone = d.spots[0] ? (d.spots[0].area || d.spots[0].name?.[currentLang] || d.spots[0].name?.ko || '') : '';
@@ -1372,8 +1387,8 @@ function renderPlannerResult(result){
     ${dayCards}`;
 }
 
-function stayReasons(area, budgetPerNightJpy){
-  const price=area.prices.budget||area.prices.standard||0;
+function stayReasons(area, budgetPerNightJpy, stayType='budget'){
+  const price=area.prices[stayType]||area.prices.budget||area.prices.standard||0;
   const fitsBudget=!budgetPerNightJpy||price<=budgetPerNightJpy;
   if(currentLang==='en') return [
     `Budget: ${fmt(price)}${fitsBudget?' fits the nightly target':' keeps the stay cost predictable'}`,
@@ -1392,9 +1407,9 @@ function stayReasons(area, budgetPerNightJpy){
   ];
 }
 
-function drawStayRecommendation(area, budgetPerNightJpy){
+function drawStayRecommendation(area, budgetPerNightJpy, stayType='budget'){
   const name=area[currentLang]||area.ko;
-  const reasons=stayReasons(area, budgetPerNightJpy).map(r=>`<div class="stay-rec-reason">${r}</div>`).join('');
+  const reasons=stayReasons(area, budgetPerNightJpy, stayType).map(r=>`<div class="stay-rec-reason">${r}</div>`).join('');
   routeFocusAreaIds.add(area.id);
   const bannerPos=[area.coords[0]+0.018,area.coords[1]+0.026];
   L.marker(area.coords,{icon:L.divIcon({html:`<div class="stay-hotel-pin">🏨</div>`,className:'',iconSize:[48,48],iconAnchor:[24,24]}),interactive:false,zIndexOffset:790}).addTo(routeLayer);
@@ -1412,11 +1427,11 @@ function offsetRouteBannerPos(coord, dayIndex, stopIndex=0){
   return [coord[0]+p[0],coord[1]+p[1]];
 }
 
-function drawRouteOnMap(days, recArea, budgetPerNightJpy){
+function drawRouteOnMap(days, recArea, budgetPerNightJpy, recStayType){
   routeLayer.clearLayers();
   routeFocusAreaIds = new Set();
   const mobileRoute = window.cityIsMobileRouteView?.() === true;
-  if(recArea) drawStayRecommendation(recArea, budgetPerNightJpy);
+  if(recArea) drawStayRecommendation(recArea, budgetPerNightJpy, recStayType);
   days.forEach(day=>{
     const coords = day.spots.map(s=>s.coords);
     if(coords.length===0) return;
