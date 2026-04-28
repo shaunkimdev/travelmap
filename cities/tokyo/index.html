@@ -1415,7 +1415,8 @@ function offsetRouteBannerPos(coord, dayIndex, stopIndex=0){
 function drawRouteOnMap(days, recArea, budgetPerNightJpy){
   routeLayer.clearLayers();
   routeFocusAreaIds = new Set();
-  if(recArea) drawStayRecommendation(recArea, budgetPerNightJpy);
+  const mobileRoute = window.cityIsMobileRouteView?.() === true;
+  if(recArea && !mobileRoute) drawStayRecommendation(recArea, budgetPerNightJpy);
   days.forEach(day=>{
     const coords = day.spots.map(s=>s.coords);
     if(coords.length===0) return;
@@ -1433,13 +1434,15 @@ function drawRouteOnMap(days, recArea, budgetPerNightJpy){
       zIndexOffset:700
     }).addTo(routeLayer);
     dayMarker.on('drag',e=>dayConnector.setLatLngs([coords[0],e.target.getLatLng()]));
-    coords.forEach(c=>{
-      L.marker(c,{
-        icon:L.divIcon({html:`<div class="route-stop-dot" style="--route-color:${day.color}"></div>`,className:'',iconSize:[30,30],iconAnchor:[15,15]}),
-        interactive:false,
-        zIndexOffset:420
-      }).addTo(routeLayer);
-    });
+    if(!mobileRoute){
+      coords.forEach(c=>{
+        L.marker(c,{
+          icon:L.divIcon({html:`<div class="route-stop-dot" style="--route-color:${day.color}"></div>`,className:'',iconSize:[30,30],iconAnchor:[15,15]}),
+          interactive:false,
+          zIndexOffset:420
+        }).addTo(routeLayer);
+      });
+    }
     if(coords.length<2) return;
     L.polyline(coords,{color:'#0b0e1a',weight:12,opacity:.8,lineCap:'round',lineJoin:'round'}).addTo(routeLayer);
     L.polyline(coords,{color:day.color,weight:7,opacity:1,dashArray:'10 7',lineCap:'round',lineJoin:'round'}).addTo(routeLayer);
@@ -1453,19 +1456,21 @@ function drawRouteOnMap(days, recArea, budgetPerNightJpy){
         interactive:false, zIndexOffset:100
       }).addTo(routeLayer);
     }
-    // Bubble markers per stop
-    coords.forEach((c,i)=>{
-      const s  = day.spots[i];
-      const sn = s.name[currentLang]||s.name.ko;
-      const icon = L.divIcon({
-        html:`<div class="rb-wrap"><div class="rb-num" style="background:${day.color}">${i+1}</div><span class="rb-text">${s.emoji} ${sn}</span></div>`,
-        className:'', iconSize:[null,34], iconAnchor:[10,17]
+    if(!mobileRoute){
+      // Bubble markers per stop
+      coords.forEach((c,i)=>{
+        const s  = day.spots[i];
+        const sn = s.name[currentLang]||s.name.ko;
+        const icon = L.divIcon({
+          html:`<div class="rb-wrap"><div class="rb-num" style="background:${day.color}">${i+1}</div><span class="rb-text">${s.emoji} ${sn}</span></div>`,
+          className:'', iconSize:[null,34], iconAnchor:[10,17]
+        });
+        const labelPos=offsetRouteBannerPos(c,day.day,i+2);
+        const stopConnector=L.polyline([c,labelPos],{color:day.color,weight:1.5,opacity:.55,dashArray:'3 5'}).addTo(routeLayer);
+        const stopMarker=L.marker(labelPos,{icon,draggable:true,zIndexOffset:500}).addTo(routeLayer);
+        stopMarker.on('drag',e=>stopConnector.setLatLngs([c,e.target.getLatLng()]));
       });
-      const labelPos=offsetRouteBannerPos(c,day.day,i+2);
-      const stopConnector=L.polyline([c,labelPos],{color:day.color,weight:1.5,opacity:.55,dashArray:'3 5'}).addTo(routeLayer);
-      const stopMarker=L.marker(labelPos,{icon,draggable:true,zIndexOffset:500}).addTo(routeLayer);
-      stopMarker.on('drag',e=>stopConnector.setLatLngs([c,e.target.getLatLng()]));
-    });
+    }
   });
   // Fit map to route
   if(days.length>0){

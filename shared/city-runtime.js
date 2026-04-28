@@ -286,6 +286,7 @@
   };
 
   window.citySyncPressedStates = syncPressedStates;
+  window.cityIsMobileRouteView = isMobileViewport;
 
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && document.getElementById('planner-overlay')?.classList.contains('open')) {

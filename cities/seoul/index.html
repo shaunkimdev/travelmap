@@ -468,7 +468,8 @@ function offsetRouteBannerPos(coord,dayIndex,stopIndex=0){
 function drawRouteOnMap(plan){
   routeLayer.clearLayers();
   routeFocusAreaIds=new Set();
-  drawStayRecommendation(plan.accArea, plan.budgetKRW);
+  const mobileRoute=window.cityIsMobileRouteView?.()===true;
+  if(!mobileRoute)drawStayRecommendation(plan.accArea, plan.budgetKRW);
   plan.dayPlans.forEach((dp,i)=>{
     const spots=[{lat:dp.area.coords[0],lng:dp.area.coords[1]},...dp.spots.map(s=>({lat:s.lat,lng:s.lng}))];
     const aName=currentLang==='ko'?dp.area.ko:currentLang==='en'?dp.area.en:dp.area.ja;
@@ -476,7 +477,7 @@ function drawRouteOnMap(plan){
     dp.spots.forEach(s=>{if(s.area)routeFocusAreaIds.add(s.area);});
     if(spots.length){
       const dayBannerPos=offsetRouteBannerPos([spots[0].lat,spots[0].lng],i+1,0),dayConnector=L.polyline([[spots[0].lat,spots[0].lng],dayBannerPos],{color:dp.color,weight:2,opacity:.75,dashArray:'4 4'}).addTo(routeLayer),dayMarker=L.marker(dayBannerPos,{icon:L.divIcon({html:`<div class="route-day-badge" style="--route-color:${dp.color}"><span class="route-day-kicker">DAY ${i+1}:</span><span class="route-day-name">${aName}</span></div>`,className:'',iconSize:[null,48],iconAnchor:[10,58]}),draggable:true,zIndexOffset:700}).addTo(routeLayer);dayMarker.on('drag',e=>dayConnector.setLatLngs([[spots[0].lat,spots[0].lng],e.target.getLatLng()]));
-      spots.forEach(s=>L.marker([s.lat,s.lng],{icon:L.divIcon({html:`<div class="route-stop-dot" style="--route-color:${dp.color}"></div>`,className:'',iconSize:[30,30],iconAnchor:[15,15]}),interactive:false,zIndexOffset:420}).addTo(routeLayer));
+      if(!mobileRoute)spots.forEach(s=>L.marker([s.lat,s.lng],{icon:L.divIcon({html:`<div class="route-stop-dot" style="--route-color:${dp.color}"></div>`,className:'',iconSize:[30,30],iconAnchor:[15,15]}),interactive:false,zIndexOffset:420}).addTo(routeLayer));
     }
     for(let j=0;j<spots.length-1;j++){
       const A=spots[j],B=spots[j+1];
@@ -486,7 +487,7 @@ function drawRouteOnMap(plan){
       const angle=Math.atan2(B.lng-A.lng,B.lat-A.lat)*180/Math.PI;
       L.marker([midLat,midLng],{icon:L.divIcon({html:`<div class="route-arrow" style="--route-color:${dp.color};transform:rotate(${angle}deg)">▼</div>`,className:'',iconSize:[22,22],iconAnchor:[11,11]}),interactive:false,zIndexOffset:450}).addTo(routeLayer);
     }
-    const labelPos=offsetRouteBannerPos(dp.area.coords,i+1,2),stopConnector=L.polyline([dp.area.coords,labelPos],{color:dp.color,weight:1.5,opacity:.55,dashArray:'3 5'}).addTo(routeLayer),stopMarker=L.marker(labelPos,{icon:L.divIcon({html:`<div class="rb-wrap"><div class="rb-num" style="background:${dp.color}">${i+1}</div><div class="rb-text">Day ${i+1} · ${aName}</div></div>`,className:'',iconSize:[null,null],iconAnchor:[10,17]}),draggable:true,zIndexOffset:500}).addTo(routeLayer);stopMarker.on('drag',e=>stopConnector.setLatLngs([dp.area.coords,e.target.getLatLng()]));
+    if(!mobileRoute){const labelPos=offsetRouteBannerPos(dp.area.coords,i+1,2),stopConnector=L.polyline([dp.area.coords,labelPos],{color:dp.color,weight:1.5,opacity:.55,dashArray:'3 5'}).addTo(routeLayer),stopMarker=L.marker(labelPos,{icon:L.divIcon({html:`<div class="rb-wrap"><div class="rb-num" style="background:${dp.color}">${i+1}</div><div class="rb-text">Day ${i+1} · ${aName}</div></div>`,className:'',iconSize:[null,null],iconAnchor:[10,17]}),draggable:true,zIndexOffset:500}).addTo(routeLayer);stopMarker.on('drag',e=>stopConnector.setLatLngs([dp.area.coords,e.target.getLatLng()]));}
   });
   if(plan.dayPlans.length){
     const allCoords=[plan.accArea.coords,...plan.dayPlans.flatMap(dp=>[dp.area.coords,...dp.spots.map(s=>[s.lat,s.lng])])];
