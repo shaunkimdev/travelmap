@@ -509,7 +509,7 @@ header::before {
     right: 0;
     top: 0;
     width: 100% !important;
-    max-height: min(18vh, 150px);
+    max-height: min(14vh, 112px);
     border-top: none;
     border-bottom: 1px solid var(--border);
     border-right: none;
@@ -521,20 +521,11 @@ header::before {
   }
 
   .sidebar::before {
-    content: '';
-    display: block;
-    width: 40px;
-    height: 4px;
-    border-radius: 999px;
-    background: #dcdfE3;
-    margin: 10px auto 0;
-    position: sticky;
-    top: 10px;
-    z-index: 1;
+    display: none;
   }
 
   .sec {
-    padding: 12px 14px;
+    padding: 8px 12px 9px;
     border-bottom: 1px solid var(--border);
   }
 
@@ -544,7 +535,7 @@ header::before {
 
   .sidebar .mobile-map-legend {
     position: fixed;
-    top: calc(122px + min(18vh, 150px) + 10px);
+    top: calc(122px + min(14vh, 112px) + 8px);
     right: 8px;
     bottom: 142px;
     width: 46px;
@@ -602,7 +593,7 @@ header::before {
     display: flex;
     overflow-x: auto;
     gap: 7px;
-    padding-bottom: 2px;
+    padding-bottom: 0;
     scrollbar-width: none;
   }
 
@@ -616,17 +607,17 @@ header::before {
     border-radius: 999px;
     flex-direction: row;
     justify-content: center;
-    padding: 8px 12px;
+    padding: 6px 10px;
   }
 
   .t-picto {
-    width: 24px;
-    height: 24px;
+    width: 21px;
+    height: 21px;
     background: transparent;
   }
 
   .t-picto .material-symbols-outlined {
-    font-size: 17px;
+    font-size: 16px;
   }
 
   .t-range {
@@ -648,7 +639,7 @@ header::before {
   }
 
   .leaflet-control-zoom {
-    margin-top: calc(min(18vh, 150px) + 10px) !important;
+    margin-top: calc(min(14vh, 112px) + 8px) !important;
     margin-bottom: 78px !important;
   }
 
