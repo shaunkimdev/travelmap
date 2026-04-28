@@ -485,37 +485,13 @@ header::before {
   .planner-btn {
     position: fixed;
     right: 12px;
-    bottom: 158px;
+    bottom: calc(64px + 18vh + 10px);
     z-index: 700;
     box-shadow: 0 4px 16px rgba(20,21,23,.18);
   }
 
   .dd-city-tabs {
-    display: flex;
-    height: 46px;
-    background: #fff;
-    border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
-    z-index: 1100;
-  }
-
-  .dd-city-tab {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    border-bottom: 2.5px solid transparent;
-    color: var(--text2);
-    font-size: 14px;
-    font-weight: 700;
-    text-decoration: none;
-  }
-
-  .dd-city-tab.active {
-    color: #ff5c8a;
-    border-bottom-color: #ff5c8a;
-    font-weight: 900;
+    display: none;
   }
 
   .main {
@@ -533,14 +509,14 @@ header::before {
     right: 0;
     bottom: 64px;
     width: 100% !important;
-    max-height: 27vh;
+    max-height: min(18vh, 150px);
     border-top: 1px solid var(--border);
     border-right: none;
     border-radius: 20px 20px 0 0;
     box-shadow: 0 -4px 22px rgba(20,21,23,.12);
     z-index: 650;
     display: block;
-    overflow-y: auto;
+    overflow: hidden;
   }
 
   .sidebar::before {
@@ -561,7 +537,7 @@ header::before {
     border-bottom: 1px solid var(--border);
   }
 
-  .sec:nth-of-type(n+4) {
+  .sec:nth-of-type(n+2) {
     display: none;
   }
 
@@ -615,7 +591,7 @@ header::before {
   }
 
   .leaflet-control-zoom {
-    margin-bottom: 30vh !important;
+    margin-bottom: 21vh !important;
   }
 
   .leaflet-popup-content-wrapper {
