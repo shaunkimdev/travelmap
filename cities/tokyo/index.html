@@ -1416,7 +1416,7 @@ function drawRouteOnMap(days, recArea, budgetPerNightJpy){
   routeLayer.clearLayers();
   routeFocusAreaIds = new Set();
   const mobileRoute = window.cityIsMobileRouteView?.() === true;
-  if(recArea && !mobileRoute) drawStayRecommendation(recArea, budgetPerNightJpy);
+  if(recArea) drawStayRecommendation(recArea, budgetPerNightJpy);
   days.forEach(day=>{
     const coords = day.spots.map(s=>s.coords);
     if(coords.length===0) return;
@@ -1449,10 +1449,11 @@ function drawRouteOnMap(days, recArea, budgetPerNightJpy){
     // Arrow markers at midpoints
     for(let i=0;i<coords.length-1;i++){
       const [lat1,lng1]=coords[i], [lat2,lng2]=coords[i+1];
-      const mLat=(lat1+lat2)/2, mLng=(lng1+lng2)/2;
-      const ang = Math.atan2(lat2-lat1, lng2-lng1)*180/Math.PI - 90;
+      const ratio=mobileRoute?.86:.5, mLat=lat1+(lat2-lat1)*ratio, mLng=lng1+(lng2-lng1)*ratio;
+      const p1=map.latLngToLayerPoint([lat1,lng1]), p2=map.latLngToLayerPoint([lat2,lng2]);
+      const ang = mobileRoute ? Math.atan2(p2.y-p1.y,p2.x-p1.x)*180/Math.PI : Math.atan2(lat2-lat1, lng2-lng1)*180/Math.PI - 90;
       L.marker([mLat,mLng],{
-        icon:L.divIcon({html:`<div class="route-arrow" style="--route-color:${day.color};transform:rotate(${ang}deg)">▼</div>`,className:'',iconSize:[22,22],iconAnchor:[11,11]}),
+        icon:L.divIcon({html:`<div class="route-arrow" style="--route-color:${day.color};transform:rotate(${ang}deg)">${mobileRoute?'➤':'▼'}</div>`,className:'',iconSize:[22,22],iconAnchor:[11,11]}),
         interactive:false, zIndexOffset:100
       }).addTo(routeLayer);
     }

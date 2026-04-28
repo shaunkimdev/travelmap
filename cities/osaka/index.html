@@ -361,7 +361,7 @@ function generateAndRender(){
   routeLayer.clearLayers();
   routeFocusAreaIds=new Set();
   const mobileRoute=window.cityIsMobileRouteView?.()===true;
-  if(!mobileRoute)drawStayRecommendation(result.recArea,result.budgetPerNightJpy);
+  drawStayRecommendation(result.recArea,result.budgetPerNightJpy);
   result.days.forEach(day=>{
     const coords=day.spots.map(s=>s.coords);
     if(coords.length===0)return;
@@ -373,8 +373,8 @@ function generateAndRender(){
     L.polyline(coords,{color:'#0b0e1a',weight:12,opacity:.8,lineCap:'round',lineJoin:'round'}).addTo(routeLayer);
     L.polyline(coords,{color:day.color,weight:7,opacity:1,dashArray:'10 7',lineCap:'round',lineJoin:'round'}).addTo(routeLayer);
     for(let i=0;i<coords.length-1;i++){
-      const[a,b]=[coords[i],coords[i+1]],ang=Math.atan2(a[0]-b[0],b[1]-a[1])*180/Math.PI;
-      L.marker([(a[0]+b[0])/2,(a[1]+b[1])/2],{icon:L.divIcon({html:`<div class="route-arrow" style="--route-color:${day.color};transform:rotate(${ang}deg)">▼</div>`,className:'',iconSize:[22,22],iconAnchor:[11,11]}),interactive:false,zIndexOffset:450}).addTo(routeLayer);
+      const[a,b]=[coords[i],coords[i+1]],ratio=mobileRoute?.86:.5,arrowPos=[a[0]+(b[0]-a[0])*ratio,a[1]+(b[1]-a[1])*ratio],p1=map.latLngToLayerPoint(a),p2=map.latLngToLayerPoint(b),ang=mobileRoute?Math.atan2(p2.y-p1.y,p2.x-p1.x)*180/Math.PI:Math.atan2(a[0]-b[0],b[1]-a[1])*180/Math.PI;
+      L.marker(arrowPos,{icon:L.divIcon({html:`<div class="route-arrow" style="--route-color:${day.color};transform:rotate(${ang}deg)">${mobileRoute?'➤':'▼'}</div>`,className:'',iconSize:[22,22],iconAnchor:[11,11]}),interactive:false,zIndexOffset:450}).addTo(routeLayer);
     }
     if(!mobileRoute)coords.forEach((c,i)=>{const s=day.spots[i],sn=s.name[currentLang]||s.name.ko,labelPos=offsetRouteBannerPos(c,day.day,i+2),stopConnector=L.polyline([c,labelPos],{color:day.color,weight:1.5,opacity:.55,dashArray:'3 5'}).addTo(routeLayer),stopMarker=L.marker(labelPos,{icon:L.divIcon({html:`<div class="rb-wrap"><div class="rb-num" style="background:${day.color}">${i+1}</div><span class="rb-text">${s.emoji} ${sn}</span></div>`,className:'',iconSize:[null,34],iconAnchor:[10,17]}),draggable:true,zIndexOffset:500}).addTo(routeLayer);stopMarker.on('drag',e=>stopConnector.setLatLngs([c,e.target.getLatLng()]));});
   });

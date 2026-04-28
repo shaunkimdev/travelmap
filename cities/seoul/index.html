@@ -469,7 +469,7 @@ function drawRouteOnMap(plan){
   routeLayer.clearLayers();
   routeFocusAreaIds=new Set();
   const mobileRoute=window.cityIsMobileRouteView?.()===true;
-  if(!mobileRoute)drawStayRecommendation(plan.accArea, plan.budgetKRW);
+  drawStayRecommendation(plan.accArea, plan.budgetKRW);
   plan.dayPlans.forEach((dp,i)=>{
     const spots=[{lat:dp.area.coords[0],lng:dp.area.coords[1]},...dp.spots.map(s=>({lat:s.lat,lng:s.lng}))];
     const aName=currentLang==='ko'?dp.area.ko:currentLang==='en'?dp.area.en:dp.area.ja;
@@ -483,9 +483,9 @@ function drawRouteOnMap(plan){
       const A=spots[j],B=spots[j+1];
       L.polyline([[A.lat,A.lng],[B.lat,B.lng]],{color:'#0b0e1a',weight:12,opacity:.8,lineCap:'round',lineJoin:'round'}).addTo(routeLayer);
       L.polyline([[A.lat,A.lng],[B.lat,B.lng]],{color:dp.color,weight:7,opacity:1,dashArray:'10 7',lineCap:'round',lineJoin:'round'}).addTo(routeLayer);
-      const midLat=(A.lat+B.lat)/2,midLng=(A.lng+B.lng)/2;
-      const angle=Math.atan2(B.lng-A.lng,B.lat-A.lat)*180/Math.PI;
-      L.marker([midLat,midLng],{icon:L.divIcon({html:`<div class="route-arrow" style="--route-color:${dp.color};transform:rotate(${angle}deg)">▼</div>`,className:'',iconSize:[22,22],iconAnchor:[11,11]}),interactive:false,zIndexOffset:450}).addTo(routeLayer);
+      const ratio=mobileRoute?.86:.5,midLat=A.lat+(B.lat-A.lat)*ratio,midLng=A.lng+(B.lng-A.lng)*ratio,p1=map.latLngToLayerPoint([A.lat,A.lng]),p2=map.latLngToLayerPoint([B.lat,B.lng]);
+      const angle=mobileRoute?Math.atan2(p2.y-p1.y,p2.x-p1.x)*180/Math.PI:Math.atan2(B.lng-A.lng,B.lat-A.lat)*180/Math.PI;
+      L.marker([midLat,midLng],{icon:L.divIcon({html:`<div class="route-arrow" style="--route-color:${dp.color};transform:rotate(${angle}deg)">${mobileRoute?'➤':'▼'}</div>`,className:'',iconSize:[22,22],iconAnchor:[11,11]}),interactive:false,zIndexOffset:450}).addTo(routeLayer);
     }
     if(!mobileRoute){const labelPos=offsetRouteBannerPos(dp.area.coords,i+1,2),stopConnector=L.polyline([dp.area.coords,labelPos],{color:dp.color,weight:1.5,opacity:.55,dashArray:'3 5'}).addTo(routeLayer),stopMarker=L.marker(labelPos,{icon:L.divIcon({html:`<div class="rb-wrap"><div class="rb-num" style="background:${dp.color}">${i+1}</div><div class="rb-text">Day ${i+1} · ${aName}</div></div>`,className:'',iconSize:[null,null],iconAnchor:[10,17]}),draggable:true,zIndexOffset:500}).addTo(routeLayer);stopMarker.on('drag',e=>stopConnector.setLatLngs([dp.area.coords,e.target.getLatLng()]));}
   });
