@@ -720,6 +720,50 @@ header::before {
     font-weight: 800;
   }
 
+  .leaflet-marker-icon:has(.stay-rec-banner) {
+    width: 220px !important;
+    height: 116px !important;
+    margin-top: -116px !important;
+  }
+
+  .stay-rec-banner {
+    min-width: 0;
+    max-width: 220px;
+    border-width: 2px;
+    border-radius: 7px;
+    padding: 7px 8px;
+    box-shadow: 0 6px 18px rgba(0,0,0,.56), 0 0 0 2px rgba(255,255,255,.1);
+  }
+
+  .stay-rec-top {
+    gap: 6px;
+    margin-bottom: 5px;
+  }
+
+  .stay-rec-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    font-size: 15px;
+  }
+
+  .stay-rec-name {
+    font-size: .72rem;
+    line-height: 1.25;
+    word-break: keep-all;
+  }
+
+  .stay-rec-reasons {
+    gap: 2px;
+    margin-top: 4px;
+  }
+
+  .stay-rec-reason {
+    font-size: .58rem;
+    line-height: 1.32;
+    font-weight: 700;
+  }
+
   .dd-bottom-nav {
     position: fixed;
     left: 0;
