@@ -36,6 +36,8 @@
     const sidebar = document.getElementById('sidebar');
     if (!sidebar) return;
 
+    sidebar.querySelector('#sec-legend')?.closest('.sec')?.classList.add('mobile-map-legend');
+
     let last = null;
     last = moveSection(sidebar, 'sec-type', last);
     last = moveSection(sidebar, 'sec-companion', last);
@@ -70,16 +72,28 @@
 
     overlay.classList.toggle('sheet-expanded', expanded);
     panel.style.transform = '';
+    updatePlannerSheetToggle();
 
     if (expanded) {
       setTimeout(() => panel.querySelector('.pn-body')?.scrollTo({ top: 0, behavior: 'auto' }), 0);
     }
   }
 
+  function updatePlannerSheetToggle() {
+    const overlay = document.getElementById('planner-overlay');
+    const button = overlay?.querySelector('.pn-close');
+    if (!overlay || !button || !isMobileViewport()) return;
+
+    const expanded = overlay.classList.contains('sheet-expanded');
+    button.textContent = expanded ? '접기' : '펴기';
+    button.setAttribute('aria-label', expanded ? '여행 플래너 접기' : '여행 플래너 펼치기');
+  }
+
   function prepareMobilePlannerSheet() {
     const overlay = document.getElementById('planner-overlay');
     const panel = overlay?.querySelector('.planner-panel');
     const head = panel?.querySelector('.pn-head');
+    const toggleButton = panel?.querySelector('.pn-close');
     if (!overlay || !panel || !head || plannerSheetReady) return;
 
     plannerSheetReady = true;
@@ -127,6 +141,13 @@
       setPlannerSheetExpanded(!overlay.classList.contains('sheet-expanded'));
     });
 
+    toggleButton?.addEventListener('click', (event) => {
+      if (!isMobileViewport()) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      setPlannerSheetExpanded(!overlay.classList.contains('sheet-expanded'));
+    }, true);
+
     head.addEventListener('touchstart', (event) => beginDrag(event.touches[0].clientY), { passive: true });
     head.addEventListener('touchmove', (event) => moveDrag(event.touches[0].clientY), { passive: true });
     head.addEventListener('touchend', (event) => {
@@ -142,6 +163,7 @@
     head.addEventListener('pointermove', (event) => moveDrag(event.clientY));
     head.addEventListener('pointerup', (event) => endDrag(event.clientY));
     head.addEventListener('pointercancel', (event) => endDrag(event.clientY));
+    updatePlannerSheetToggle();
   }
 
   function wrapPlannerFunctions() {
