@@ -6,6 +6,11 @@
   const interactiveSelector = '.tg-btn,.type-btn,.comp-btn,.ovl-btn,.ts-btn';
   let lastPlannerTrigger = null;
   let pressedObserver = null;
+  let plannerSheetReady = false;
+
+  function isMobileViewport() {
+    return window.matchMedia('(max-width: 768px)').matches;
+  }
 
   function syncPressedStates() {
     document.querySelectorAll(interactiveSelector).forEach((button) => {
@@ -58,12 +63,94 @@
     target?.focus({ preventScroll: true });
   }
 
+  function setPlannerSheetExpanded(expanded) {
+    const overlay = document.getElementById('planner-overlay');
+    const panel = overlay?.querySelector('.planner-panel');
+    if (!overlay || !panel) return;
+
+    overlay.classList.toggle('sheet-expanded', expanded);
+    panel.style.transform = '';
+
+    if (expanded) {
+      setTimeout(() => panel.querySelector('.pn-body')?.scrollTo({ top: 0, behavior: 'auto' }), 0);
+    }
+  }
+
+  function prepareMobilePlannerSheet() {
+    const overlay = document.getElementById('planner-overlay');
+    const panel = overlay?.querySelector('.planner-panel');
+    const head = panel?.querySelector('.pn-head');
+    if (!overlay || !panel || !head || plannerSheetReady) return;
+
+    plannerSheetReady = true;
+    let startY = 0;
+    let startTranslate = 0;
+    let maxTranslate = 0;
+    let dragging = false;
+    let suppressNextClick = false;
+
+    function getCollapsedTranslate() {
+      return Math.max(0, panel.getBoundingClientRect().height - 78);
+    }
+
+    function beginDrag(clientY) {
+      if (!isMobileViewport() || !overlay.classList.contains('open')) return;
+      dragging = true;
+      startY = clientY;
+      maxTranslate = getCollapsedTranslate();
+      startTranslate = overlay.classList.contains('sheet-expanded') ? 0 : maxTranslate;
+      overlay.classList.add('sheet-dragging');
+    }
+
+    function moveDrag(clientY) {
+      if (!dragging) return;
+      const next = Math.min(maxTranslate, Math.max(0, startTranslate + clientY - startY));
+      panel.style.transform = `translateY(${next}px)`;
+    }
+
+    function endDrag(clientY) {
+      if (!dragging) return;
+      dragging = false;
+      overlay.classList.remove('sheet-dragging');
+      const moved = clientY - startY;
+      const current = Math.min(maxTranslate, Math.max(0, startTranslate + moved));
+      suppressNextClick = Math.abs(moved) > 8;
+      setPlannerSheetExpanded(current < maxTranslate * 0.55 || moved < -36);
+    }
+
+    head.addEventListener('click', (event) => {
+      if (!isMobileViewport() || event.target.closest('.pn-close')) return;
+      if (suppressNextClick) {
+        suppressNextClick = false;
+        return;
+      }
+      setPlannerSheetExpanded(!overlay.classList.contains('sheet-expanded'));
+    });
+
+    head.addEventListener('touchstart', (event) => beginDrag(event.touches[0].clientY), { passive: true });
+    head.addEventListener('touchmove', (event) => moveDrag(event.touches[0].clientY), { passive: true });
+    head.addEventListener('touchend', (event) => {
+      const touch = event.changedTouches[0];
+      endDrag(touch ? touch.clientY : startY);
+    });
+
+    head.addEventListener('pointerdown', (event) => {
+      if (event.pointerType === 'touch') return;
+      beginDrag(event.clientY);
+      head.setPointerCapture?.(event.pointerId);
+    });
+    head.addEventListener('pointermove', (event) => moveDrag(event.clientY));
+    head.addEventListener('pointerup', (event) => endDrag(event.clientY));
+    head.addEventListener('pointercancel', (event) => endDrag(event.clientY));
+  }
+
   function wrapPlannerFunctions() {
     if (typeof window.openPlanner === 'function' && !window.openPlanner.__cityWrapped) {
       const originalOpen = window.openPlanner;
       window.openPlanner = function (...args) {
         lastPlannerTrigger = document.activeElement instanceof HTMLElement ? document.activeElement : null;
         const result = originalOpen.apply(this, args);
+        if (isMobileViewport()) setPlannerSheetExpanded(true);
         syncPressedStates();
         setTimeout(focusPlanner, 0);
         return result;
@@ -75,6 +162,7 @@
       const originalClose = window.closePlanner;
       window.closePlanner = function (...args) {
         const result = originalClose.apply(this, args);
+        setPlannerSheetExpanded(false);
         syncPressedStates();
         if (lastPlannerTrigger?.isConnected) {
           lastPlannerTrigger.focus({ preventScroll: true });
@@ -141,6 +229,10 @@
 
     if (window.matchMedia('(min-width: 769px)').matches) {
       overlay.classList.add('open');
+      overlay.classList.remove('sheet-expanded');
+    } else {
+      overlay.classList.add('open');
+      setPlannerSheetExpanded(false);
     }
   }
 
@@ -181,6 +273,7 @@
 
   window.addEventListener('load', () => {
     buildDokidokiChrome();
+    prepareMobilePlannerSheet();
     syncPlannerInitialState();
     reorderSidebar();
     enhancePlannerDialog();

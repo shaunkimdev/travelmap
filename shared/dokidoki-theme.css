@@ -533,7 +533,7 @@ header::before {
     right: 0;
     bottom: 64px;
     width: 100% !important;
-    max-height: 39vh;
+    max-height: 27vh;
     border-top: 1px solid var(--border);
     border-right: none;
     border-radius: 20px 20px 0 0;
@@ -615,7 +615,7 @@ header::before {
   }
 
   .leaflet-control-zoom {
-    margin-bottom: 42vh !important;
+    margin-bottom: 30vh !important;
   }
 
   .leaflet-popup-content-wrapper {
@@ -624,25 +624,66 @@ header::before {
 
   .planner-overlay {
     top: 0;
-    background: rgba(20,21,23,.28);
+    bottom: 64px;
+    background: transparent;
     align-items: flex-end;
     justify-content: center;
   }
 
   .planner-overlay.open {
-    pointer-events: auto;
+    pointer-events: none;
   }
 
   .planner-panel {
     width: 100%;
-    max-height: 86vh;
+    max-height: min(82vh, calc(100dvh - 92px));
     border-radius: 20px 20px 0 0;
     border-left: none;
     transform: translateY(100%);
+    touch-action: pan-y;
   }
 
   .planner-overlay.open .planner-panel {
+    transform: translateY(calc(100% - 78px));
+  }
+
+  .planner-overlay.open.sheet-expanded .planner-panel {
     transform: translateY(0);
+  }
+
+  .planner-overlay.open.sheet-dragging .planner-panel {
+    transition: none;
+  }
+
+  .planner-overlay.open.sheet-dragging {
+    background: transparent;
+  }
+
+  .planner-overlay.open.sheet-expanded {
+    background: rgba(20,21,23,.18);
+  }
+
+  .pn-head {
+    cursor: grab;
+    min-height: 78px;
+    padding-top: 24px;
+    position: relative;
+  }
+
+  .pn-head::before {
+    content: '';
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    width: 44px;
+    height: 4px;
+    border-radius: 999px;
+    background: #dcdfE3;
+    transform: translateX(-50%);
+  }
+
+  .pn-body {
+    padding-bottom: calc(88px + env(safe-area-inset-bottom));
   }
 
   .dd-bottom-nav {
